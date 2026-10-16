@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#C3CFDA">
+<title>说话宠物</title>
+<style>
+:root{
+  --wall1:#E3E9EF; --wall2:#C3CFDA; --floor1:#B4C1CD; --floor2:#9DAAB7;
+  --ink:#33404D; --title:rgba(46,62,80,.78);
+  --btn:#FFFFFF; --btnInk:#3B4855;
+  --barTop:rgba(255,255,255,.74); --barBot:rgba(236,242,247,.95);
+  --barLine:rgba(255,255,255,.9); --barShadow:rgba(48,66,86,.14);
+  --chipBg:rgba(255,255,255,.72); --chipLine:rgba(255,255,255,.9);
+  --accent:#4A90D9; --rec:#E8453C;
+  --page:#C3CFDA;
+}
+body.night{
+  --wall1:#232E3C; --wall2:#141C26; --floor1:#2A3644; --floor2:#1A232E;
+  --ink:#DCE6F0; --title:rgba(214,228,242,.86);
+  --btn:#2B3A4A; --btnInk:#D3E1EF;
+  --barTop:rgba(30,41,54,.80); --barBot:rgba(16,23,31,.96);
+  --barLine:rgba(255,255,255,.09); --barShadow:rgba(0,0,0,.5);
+  --chipBg:rgba(43,58,74,.78); --chipLine:rgba(255,255,255,.10);
+  --page:#141C26;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--page);color:var(--ink);
+  user-select:none;-webkit-user-select:none;
+  transition:background .3s ease;
+}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+/* ---------- 房间 ---------- */
+#stage{
+  position:relative;flex:1;min-height:0;
+  background:radial-gradient(120% 90% at 50% 12%, var(--wall1) 0%, var(--wall1) 30%, var(--wall2) 68%, var(--wall2) 100%);
+  overflow:hidden;
+  display:flex;align-items:flex-end;justify-content:center;
+  transition:background .3s ease;
+}
+#floor{
+  position:absolute;left:-20%;right:-20%;bottom:0;height:26%;
+  background:linear-gradient(180deg,var(--floor1) 0%,var(--floor2) 100%);
+  transform:perspective(560px) rotateX(58deg);
+  transform-origin:50% 0%;
+  box-shadow:inset 0 22px 40px -14px rgba(20,30,42,.4);
+  transition:background .3s ease;
+}
+#skirting{
+  position:absolute;left:0;right:0;bottom:26%;height:14px;
+  background:linear-gradient(180deg,var(--wall1),var(--floor1));
+  opacity:.85;
+  box-shadow:0 3px 7px rgba(30,44,58,.28);
+  transition:background .3s ease;
+}
+#vignette{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 85% at 50% 45%,transparent 45%,rgba(34,50,68,.28) 100%);
+}
+
+/* ---------- 角色 ---------- */
+#pet{
+  position:relative;z-index:2;flex:1 1 auto;min-width:0;
+  width:100%;height:90%;max-height:calc(100% - 4px);
+  transition:opacity .2s ease;
+}
+#pet svg{
+  width:100%;height:100%;display:block;overflow:visible;
+  filter:drop-shadow(0 18px 26px rgba(40,58,78,.22));
+}
+#pet.gone{opacity:0}
+
+/* 呼吸 / 待机 / 尾巴 —— 几何原点由每个皮肤自带 */
+#bodyGroup{animation:breathe 3.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.016,1.009)}}
+#headBob{animation:headBob 4.1s ease-in-out infinite}
+@keyframes headBob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-9px) rotate(.7deg)}}
+#tailGroup{animation:tailSway 2.9s ease-in-out infinite}
+@keyframes tailSway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(7deg)}}
+#eyeL,#eyeR{transition:transform .075s ease}
+#pupilL,#pupilR{transition:transform .22s ease-out}
+
+/* ---------- 反应动画 ---------- */
+#pet.react-pet #headGroup{animation:reactPet 1.05s ease}
+@keyframes reactPet{
+  0%,100%{transform:translateY(0) rotate(0)}
+  22%{transform:translateY(13px) rotate(-3.5deg)}
+  48%{transform:translateY(9px) rotate(-2deg)}
+  72%{transform:translateY(11px) rotate(-2.6deg)}
+}
+#pet.react-belly #bodyGroup{animation:reactBelly .8s cubic-bezier(.3,1.6,.5,1)}
+@keyframes reactBelly{
+  0%,100%{transform:scale(1)}
+  28%{transform:scale(1.07,.9) translateY(14px)}
+  62%{transform:scale(.97,1.05) translateY(-6px)}
+}
+#pet.react-tail #tailGroup{animation:reactTail .85s ease}
+@keyframes reactTail{
+  0%,100%{transform:rotate(-6deg)}
+  15%{transform:rotate(30deg) scaleY(1.2)}
+  35%{transform:rotate(-24deg)}
+  55%{transform:rotate(18deg)}
+  78%{transform:rotate(-10deg)}
+}
+#pet.react-tail #headGroup{animation:reactTurn .85s ease}
+@keyframes reactTurn{
+  0%,100%{transform:rotate(0)}
+  25%{transform:rotate(9deg) translateY(4px)}
+  60%{transform:rotate(-6deg)}
+}
+#pet.react-eat #headGroup{animation:reactEat .5s ease-in-out 3}
+@keyframes reactEat{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(12px) scale(1.02)}
+}
+#pet.react-happy #headGroup{animation:reactHappy .62s ease-in-out 2}
+@keyframes reactHappy{
+  0%,100%{transform:translateY(0) rotate(0)}
+  50%{transform:translateY(-14px) rotate(-2.5deg)}
+}
+#pet.speaking #headGroup{animation:speakNod .42s ease-in-out infinite}
+@keyframes speakNod{
+  0%,100%{transform:translateY(0) rotate(0)}
+  50%{transform:translateY(6px) rotate(1.2deg)}
+}
+#pet.react-shock #headGroup{animation:reactShock .5s ease}
+@keyframes reactShock{
+  0%{transform:translateY(0) scale(1)}
+  30%{transform:translateY(-16px) scale(1.045)}
+  60%{transform:translateY(4px) scale(.99)}
+  100%{transform:translateY(0) scale(1)}
+}
+#props{pointer-events:none}
+
+/* ---------- 写实皮肤：整图当场景 ---------- */
+#scene{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  z-index:0;pointer-events:none;opacity:0;transition:opacity .45s ease;
+}
+#stage.sceneon #scene{opacity:1}
+#sceneIn{
+  position:relative;width:100%;height:100%;overflow:hidden;
+  background-repeat:no-repeat;background-size:100% 100%;background-position:center;
+  transform-origin:50% 72%;
+}
+#floor,#skirting{transition:opacity .35s ease}
+#stage.sceneon #floor,#stage.sceneon #skirting{opacity:0}
+
+/* 说话声波（贴在标定好的嘴部坐标上） */
+#pulse{position:absolute;width:0;height:0;opacity:0;transition:opacity .22s ease}
+#pulse.on{opacity:1}
+#pulse .glow{
+  position:absolute;left:50%;top:50%;width:220px;height:220px;margin:-110px 0 0 -110px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.92) 0%,rgba(170,225,255,.55) 34%,rgba(130,195,255,.18) 58%,rgba(130,195,255,0) 74%);
+  transform:scale(calc(.30 + var(--lv,0)*1.10));
+}
+#pulse .rg{
+  position:absolute;left:50%;top:50%;width:100px;height:100px;margin:-50px 0 0 -50px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.85);
+  box-shadow:0 0 14px rgba(160,220,255,.8),inset 0 0 14px rgba(160,220,255,.55);
+  animation:pripple 1.15s ease-out infinite;
+}
+#pulse .rg:nth-of-type(3){animation-delay:.38s}
+#pulse .rg:nth-of-type(4){animation-delay:.76s}
+@keyframes pripple{0%{transform:scale(.42);opacity:.85}100%{transform:scale(2.05);opacity:0}}
+#pulse.hot .glow{background:radial-gradient(circle,rgba(255,238,186,.95) 0%,rgba(255,152,80,.6) 34%,rgba(255,92,50,.2) 58%,rgba(255,92,50,0) 74%)}
+#pulse.hot .rg{border-color:rgba(255,196,126,.92);box-shadow:0 0 14px rgba(255,140,70,.85),inset 0 0 14px rgba(255,140,70,.5)}
+
+/* ── 写实皮肤：嘴部换帧 ──────────────────────────────────────
+   底图是「闭嘴」那一帧，这一层是「张嘴」那一帧，只在嘴部椭圆内显示，
+   羽化很宽（40%→100%）所以边界看不出来，靠 --lv（说话音量）淡入淡出。 */
+#mouthPatch{
+  position:absolute;left:0;top:0;width:100%;height:100%;
+  background-repeat:no-repeat;background-size:100% 100%;background-position:center;
+  opacity:var(--lv,0);pointer-events:none;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-image:radial-gradient(ellipse var(--mrx,12%) var(--mry,10%) at var(--mcx,50%) var(--mcy,50%),#000 0 40%,rgba(0,0,0,0) 100%);
+          mask-image:radial-gradient(ellipse var(--mrx,12%) var(--mry,10%) at var(--mcx,50%) var(--mcy,50%),#000 0 40%,rgba(0,0,0,0) 100%);
+}
+
+/* ── 写实皮肤：点击反应换表情 ────────────────────────────────
+   每个角色三张表情帧（开心/惊讶/发火）。这些图在打包前先裁成「脸部小块」，
+   块的大小 = 脸部椭圆外接框再每边外扩 56%（和 _cut.py 的 PAD=0.28 对齐），
+   所以蒙版直接用 closest-side 椭圆就正好是脸，内容一定落在实心区里，
+   剩下的 42% 全是羽化带，边界看不出来。 */
+#exprPatch{
+  position:absolute;display:none;pointer-events:none;
+  background-repeat:no-repeat;background-size:100% 100%;background-position:center;
+  opacity:0;transition:opacity .15s linear;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-image:radial-gradient(ellipse closest-side at 50% 50%,#000 0 58%,rgba(0,0,0,0) 100%);
+          mask-image:radial-gradient(ellipse closest-side at 50% 50%,#000 0 58%,rgba(0,0,0,0) 100%);
+}
+#exprPatch.on{opacity:1}
+
+/* ── 写实场景的待机呼吸：极缓慢起伏 + 轻微漂移，别像一张静止照片 ── */
+#stage.sceneon #scene{animation:rbIdle 5.6s ease-in-out infinite}
+@keyframes rbIdle{
+  0%,100%{transform:translate(-50%,-50%) scale(1)}
+  50%    {transform:translate(-50%,-50%) scale(1.016)}
+}
+#stage.sceneon #sceneIn{animation:rbDrift 13s ease-in-out infinite}
+@keyframes rbDrift{
+  0%,100%{transform:translate(0,0) rotate(0deg)}
+  33%    {transform:translate(2px,-5px) rotate(.22deg)}
+  66%    {transform:translate(-2px,-3px) rotate(-.18deg)}
+}
+
+/* 场景反应 */
+#scene.rb-bounce #sceneIn{animation:rbBounce 1.4s cubic-bezier(.3,1.4,.5,1)}
+@keyframes rbBounce{
+  0%,100%{transform:scale(1)}
+  18%{transform:scale(1.035,.972) translateY(10px)}
+  46%{transform:scale(.992,1.028) translateY(-14px)}
+  74%{transform:scale(1.012,.994) translateY(4px)}
+}
+#scene.rb-shake #sceneIn{animation:rbShake .62s ease-in-out 3}
+@keyframes rbShake{
+  0%,100%{transform:translate(0,0) rotate(0)}
+  20%{transform:translate(-11px,4px) rotate(-.9deg)}
+  40%{transform:translate(9px,-5px) rotate(.8deg)}
+  60%{transform:translate(-7px,3px) rotate(-.6deg)}
+  80%{transform:translate(6px,-2px) rotate(.4deg)}
+}
+#scene.rb-sway #sceneIn{animation:rbSway 1.9s ease-in-out}
+@keyframes rbSway{
+  0%,100%{transform:rotate(0)}
+  25%{transform:rotate(-1.2deg) translateY(-7px)}
+  55%{transform:rotate(1deg) translateY(-3px)}
+  80%{transform:rotate(-.5deg)}
+}
+#scene.rb-pop #sceneIn{animation:rbPop .55s ease}
+@keyframes rbPop{0%{transform:scale(1)}35%{transform:scale(1.045)}100%{transform:scale(1)}}
+
+/* 皮肤条上的写实缩略图 */
+.skin .th{
+  width:27px;height:27px;border-radius:50%;display:block;flex:0 0 auto;
+  background-repeat:no-repeat;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);
+}
+.sdiv{flex:0 0 auto;width:1px;align-self:stretch;margin:7px 2px;background:rgba(120,140,160,.32);border-radius:1px}
+body.night .sdiv{background:rgba(255,255,255,.16)}
+
+/* ---------- 底部面板 ---------- */
+#bottom{
+  position:relative;z-index:5;
+  background:linear-gradient(180deg,var(--barTop),var(--barBot));
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--barLine);
+  box-shadow:0 -10px 26px var(--barShadow);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  transition:background .3s ease;
+}
+#skinbar{
+  display:flex;gap:8px;padding:9px 12px 2px;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;
+}
+#skinbar::-webkit-scrollbar{display:none}
+.skin{
+  flex:0 0 auto;display:flex;align-items:center;gap:7px;
+  padding:6px 13px 6px 7px;border-radius:999px;border:1.5px solid transparent;
+  background:var(--chipBg);color:var(--btnInk);cursor:pointer;
+  font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.2px;
+  transition:transform .14s ease,border-color .18s,background .18s,box-shadow .18s;
+  box-shadow:0 2px 6px rgba(47,68,88,.12);
+}
+.skin svg{width:27px;height:27px;display:block;border-radius:50%}
+.skin:active{transform:scale(.94)}
+.skin.on{
+  border-color:var(--accent);
+  background:#fff;
+  box-shadow:0 3px 12px rgba(74,144,217,.32);
+}
+body.night .skin.on{background:#33465A;box-shadow:0 3px 12px rgba(74,144,217,.35)}
+
+#toolbar{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:6px 16px 14px;
+}
+.tool{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  width:80px;padding:9px 4px 7px;border:none;border-radius:20px;
+  background:var(--btn);color:var(--btnInk);
+  box-shadow:0 3px 9px rgba(48,66,86,.15),inset 0 -2px 0 rgba(48,66,86,.06);
+  cursor:pointer;transition:transform .13s ease,box-shadow .13s ease;
+  font-size:12.5px;font-weight:600;letter-spacing:.2px;
+  font-family:inherit;
+}
+.tool:active{transform:scale(.93);box-shadow:0 1px 4px rgba(48,66,86,.18)}
+.tool svg{width:27px;height:27px;display:block}
+.tool.on{background:linear-gradient(180deg,#FFF1F0,#FDDCD9);color:#C8352C}
+body.night .tool.on{background:linear-gradient(180deg,#4A2A28,#3A1F1E);color:#FF8A80}
+
+#micBtn{
+  width:104px;height:104px;border-radius:50%;padding:0;
+  margin-top:-30px;border:none;cursor:pointer;
+  background:radial-gradient(circle at 36% 30%,#6FB2EE,#3D84CE 62%,#2C6BB0);
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 18px rgba(45,110,180,.42),inset 0 -4px 0 rgba(0,0,0,.14),inset 0 3px 0 rgba(255,255,255,.28);
+  transition:width .26s ease,height .26s ease,margin-top .26s ease,opacity .26s ease,
+             transform .13s ease,background .2s ease,box-shadow .2s ease;
+  position:relative;flex:0 0 auto;
+}
+#micBtn svg{width:44px;height:44px}
+#micBtn:active{transform:scale(.94)}
+#micBtn.rec{
+  background:radial-gradient(circle at 36% 30%,#F2716A,#DE3B32 62%,#B92A22);
+  box-shadow:0 8px 18px rgba(200,50,40,.45),inset 0 -4px 0 rgba(0,0,0,.16),inset 0 3px 0 rgba(255,255,255,.26);
+}
+#micBtn.rec::before,#micBtn.rec::after{
+  content:"";position:absolute;inset:-4px;border-radius:50%;
+  border:3px solid rgba(222,59,50,.55);animation:ripple 1.5s ease-out infinite;
+}
+#micBtn.rec::after{animation-delay:.75s}
+@keyframes ripple{0%{transform:scale(1);opacity:.85}100%{transform:scale(1.62);opacity:0}}
+/* 常听模式下，中间这颗话筒不再是主按钮——说话自动触发，只在「手动插一句」时才用得上。
+   所以把它收成一颗低调的小圆点，不再抢视觉；常听在跑的信号由右上角那颗绿点表示。 */
+#micBtn.live:not(.rec){
+  width:58px;height:58px;margin-top:0;opacity:.6;
+  background:rgba(255,255,255,.5);color:#5C7A98;
+  box-shadow:0 2px 9px rgba(48,66,86,.15),inset 0 0 0 1px rgba(255,255,255,.55);
+}
+#micBtn.live:not(.rec) svg{width:23px;height:23px}
+#micBtn.live:not(.rec):active{opacity:1;transform:scale(.92)}
+body.night #micBtn.live:not(.rec){
+  background:rgba(255,255,255,.11);color:#9CB4CB;
+  box-shadow:0 2px 9px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.10);
+}
+#micBtn.live:not(.rec)::after{
+  content:"";position:absolute;top:2px;right:2px;inset:auto;
+  width:9px;height:9px;border-radius:50%;border:none;
+  background:#3ED07A;animation:pulse 1.7s ease-out infinite;
+}
+
+/* ---------- 顶部 ---------- */
+#topbar{
+  position:absolute;top:0;left:0;right:0;z-index:6;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px));
+  pointer-events:none;
+}
+#title{
+  font-size:15px;font-weight:700;letter-spacing:.4px;color:var(--title);
+  text-shadow:0 1px 0 rgba(255,255,255,.35);pointer-events:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#acts{display:flex;gap:9px;flex:0 0 auto}
+.iconbtn{
+  pointer-events:auto;position:relative;
+  width:42px;height:42px;border-radius:14px;border:none;cursor:pointer;
+  background:var(--chipBg);color:var(--btnInk);
+  box-shadow:0 3px 9px rgba(48,66,86,.16);
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:transform .13s ease,background .15s,color .15s;
+}
+.iconbtn:active{transform:scale(.9)}
+.iconbtn svg{width:21px;height:21px}
+.iconbtn.off{color:#A9B4C0}
+#alwaysBtn.on{background:linear-gradient(180deg,#DFF3FF,#BEE6FF);color:#1D6FA8}
+body.night #alwaysBtn.on{background:linear-gradient(180deg,#1E3E55,#16334A);color:#7FD3FF}
+#alwaysBtn.on::after{
+  content:"";position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;
+  background:#3ED07A;box-shadow:0 0 0 0 rgba(62,208,122,.7);animation:pulse 1.7s ease-out infinite;
+}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(62,208,122,.7)}100%{box-shadow:0 0 0 9px rgba(62,208,122,0)}}
+
+#meter{
+  position:absolute;left:0;top:0;height:3px;width:0;z-index:9;
+  background:linear-gradient(90deg,#5AC8FA,#4A90D9);
+  transition:width .07s linear;pointer-events:none;
+}
+
+/* ---------- 提示 / Toast ---------- */
+#hint{
+  position:absolute;left:50%;bottom:16px;transform:translateX(-50%);
+  background:rgba(30,42,56,.86);color:#fff;font-size:13.5px;font-weight:600;
+  padding:9px 18px;border-radius:999px;white-space:nowrap;
+  opacity:0;transition:opacity .28s ease;pointer-events:none;max-width:92vw;
+  overflow:hidden;text-overflow:ellipsis;
+  box-shadow:0 6px 18px rgba(20,32,44,.34);z-index:7;
+}
+#hint.show{opacity:1}
+#toast{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.94);
+  background:rgba(30,42,56,.94);color:#fff;font-size:14px;line-height:1.6;
+  padding:16px 22px;border-radius:18px;max-width:min(430px,82vw);text-align:center;
+  opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease;
+  z-index:99;box-shadow:0 14px 40px rgba(14,26,38,.42);font-weight:500;
+}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#toast b{color:#7FD3FF}
+
+@media (max-width:520px){
+  .tool{width:66px;font-size:11px;border-radius:17px}
+  .tool svg{width:23px;height:23px}
+  #micBtn{width:88px;height:88px;margin-top:-26px}
+  #micBtn svg{width:38px;height:38px}
+  #toolbar{gap:10px}
+  #title{font-size:13.5px}
+  .iconbtn{width:38px;height:38px;border-radius:13px}
+  .iconbtn svg{width:19px;height:19px}
+  .skin{font-size:11.5px;padding:5px 11px 5px 6px}
+  .skin svg{width:24px;height:24px}
+}
+@media (max-height:560px){
+  #pet{height:82%}
+  #micBtn{width:76px;height:76px;margin-top:-22px}
+  #micBtn svg{width:33px;height:33px}
+  .tool{padding:6px 4px 5px}
+  .tool svg{width:21px;height:21px}
+  .skinbar{padding-top:6px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="stage">
+    <div id="scene"><div id="sceneIn">
+      <div id="mouthPatch"></div>
+      <div id="exprPatch"></div>
+      <div id="pulse">
+        <span class="glow"></span><span class="rg"></span><span class="rg"></span><span class="rg"></span>
+      </div>
+    </div></div>
+    <div id="floor"></div>
+    <div id="skirting"></div>
+    <div id="vignette"></div>
+    <div id="meter"></div>
+
+    <div id="pet"></div>
+
+    <div id="topbar">
+      <div id="title">说话宠物</div>
+      <div id="acts">
+        <button class="iconbtn" id="alwaysBtn" title="常听模式：说一句跟一句">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5 6 9H2v6h4l5 4V5z"/>
+            <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+            <path d="M18.8 5.2a9 9 0 0 1 0 13.6"/>
+          </svg>
+        </button>
+        <button class="iconbtn" id="sfxBtn" title="音效开关">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 5 6 9H2v6h4l5 4V5z"/><path id="wave1" d="M15.5 8.5a5 5 0 0 1 0 7"/><path id="wave2" d="M18.5 5.5a9 9 0 0 1 0 13"/>
+          </svg>
+        </button>
+        <button class="iconbtn" id="nightBtn" title="深色 / 浅色">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a7 7 0 1 0 10.5 10.5z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="hint">点一下麦克风，随便说点什么</div>
+  </div>
+
+  <div id="bottom">
+    <div id="skinbar"></div>
+    <div id="toolbar">
+      <button class="tool" id="toolMilk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 2h8l-1.4 3.2v2.4L17.6 12v9a1 1 0 0 1-1 1H7.4a1 1 0 0 1-1-1v-9l3-4.4V5.2L8 2z" fill="#fff"/>
+          <path d="M6.4 12h11.2v9a1 1 0 0 1-1 1H7.4a1 1 0 0 1-1-1v-9z" fill="#EAF3FB" stroke="none"/>
+        </svg>
+        牛奶
+      </button>
+
+      <button id="micBtn" title="点一下开始，说完自动停">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" stroke="none"/>
+          <path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/><path d="M8.5 22h7"/>
+        </svg>
+      </button>
+
+      <button class="tool" id="toolChili">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15.8 3.4c.7-.9 1.9-1.3 2.9-.9"/>
+          <path d="M14.6 4.4c2.2 1 3.4 3.2 3.4 5.6 0 4.6-4.2 8.4-9.4 8.4-2.4 0-4.6-.9-6.2-2.4-.6-.6-.4-1.5.4-1.7 1.9-.5 2.9-1.3 3.7-2.9" fill="#E8453C" stroke="#C22F28"/>
+          <path d="M14.6 4.4c.6-.9 1.6-1.2 2.3-.6"/>
+        </svg>
+        辣椒
+      </button>
+
+      <button class="tool" id="toolFeather">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19.5 3.2c-6 0-11 4.2-12.6 9.9-.3 1-.5 2-.5 3l4-1.2 1.2-4c-4.7 1.6 10.9-7.7 7.9-7.7z" fill="#FFE7A8" stroke="#D9B14E"/>
+          <path d="M4.4 20.6 8.6 16"/>
+        </svg>
+        羽毛
+      </button>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+
+<!-- ==================================================================
+     角色 1：汤姆猫
+=================================================================== -->
+<template id="tpl-tom">
+<svg viewBox="0 0 1000 1080" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-label="汤姆猫">
+  <defs>
+    <radialGradient id="headGrad" cx="32%" cy="12%" r="96%">
+      <stop offset="0%"  stop-color="#E1E8EE"/><stop offset="24%" stop-color="#C3CFDA"/>
+      <stop offset="56%" stop-color="#A4B3C2"/><stop offset="82%" stop-color="#8B9CAD"/>
+      <stop offset="100%" stop-color="#718394"/>
+    </radialGradient>
+    <radialGradient id="bodyGrad" cx="28%" cy="8%" r="100%">
+      <stop offset="0%"  stop-color="#D8E2EA"/><stop offset="28%" stop-color="#BAC7D3"/>
+      <stop offset="60%" stop-color="#9BABBB"/><stop offset="84%" stop-color="#8496A8"/>
+      <stop offset="100%" stop-color="#6F8193"/>
+    </radialGradient>
+    <radialGradient id="bellyGrad" cx="46%" cy="8%" r="90%">
+      <stop offset="0%"  stop-color="#FFFFFF"/><stop offset="52%" stop-color="#F5F9FB"/>
+      <stop offset="100%" stop-color="#CFD9E2"/>
+    </radialGradient>
+    <radialGradient id="muzzleGrad" cx="42%" cy="10%" r="94%">
+      <stop offset="0%"  stop-color="#FFFFFF"/><stop offset="60%" stop-color="#F7FAFC"/>
+      <stop offset="100%" stop-color="#D3DDE6"/>
+    </radialGradient>
+    <radialGradient id="pawGrad" cx="36%" cy="12%" r="90%">
+      <stop offset="0%"  stop-color="#EBF1F5"/><stop offset="48%" stop-color="#CFD9E2"/>
+      <stop offset="100%" stop-color="#A9B7C4"/>
+    </radialGradient>
+    <radialGradient id="irisGrad" cx="34%" cy="18%" r="86%">
+      <stop offset="0%"  stop-color="#DCE49A"/><stop offset="38%" stop-color="#AFC257"/>
+      <stop offset="72%" stop-color="#7E9731"/><stop offset="100%" stop-color="#57691F"/>
+    </radialGradient>
+    <radialGradient id="eyeWhiteGrad" cx="38%" cy="18%" r="88%">
+      <stop offset="0%"  stop-color="#FFFFFF"/><stop offset="66%" stop-color="#F6F9FB"/>
+      <stop offset="100%" stop-color="#D8E1E9"/>
+    </radialGradient>
+    <linearGradient id="noseGrad" x1="0.1" y1="0" x2="0.3" y2="1">
+      <stop offset="0%"  stop-color="#FDC9D3"/><stop offset="48%" stop-color="#F2A5B6"/>
+      <stop offset="100%" stop-color="#D9778E"/>
+    </linearGradient>
+    <linearGradient id="earInGrad" x1="0" y1="0" x2="0.1" y2="1">
+      <stop offset="0%"  stop-color="#FBC6D0"/><stop offset="100%" stop-color="#DE879D"/>
+    </linearGradient>
+    <linearGradient id="tailGrad" x1="0.1" y1="0" x2="0.7" y2="1">
+      <stop offset="0%"  stop-color="#A6B4C2"/><stop offset="54%" stop-color="#8494A5"/>
+      <stop offset="100%" stop-color="#6A7C8F"/>
+    </linearGradient>
+    <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#2C3C4C" stop-opacity=".34"/>
+      <stop offset="60%" stop-color="#2C3C4C" stop-opacity=".11"/>
+      <stop offset="100%" stop-color="#2C3C4C" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur12" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+    <filter id="blur18" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="blur30" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="30"/></filter>
+    <clipPath id="eyeClipL"><ellipse cx="372" cy="272" rx="80" ry="84"/></clipPath>
+    <clipPath id="eyeClipR"><ellipse cx="628" cy="272" rx="80" ry="84"/></clipPath>
+    <clipPath id="headClip"><path d="M 500 56 C 664 56 776 172 776 328 C 776 484 664 592 500 592 C 336 592 224 484 224 328 C 224 172 336 56 500 56 Z"/></clipPath>
+    <clipPath id="bodyClip"><path d="M 500 558 C 664 558 764 634 764 776 C 764 920 666 1012 500 1012 C 334 1012 236 920 236 776 C 236 634 336 558 500 558 Z"/></clipPath>
+  </defs>
+
+  <ellipse cx="500" cy="1030" rx="316" ry="42" fill="url(#shadowGrad)"/>
+
+  <g id="tailGroup" style="transform-box:view-box;transform-origin:656px 906px">
+    <path d="M 656 906 C 802 924 882 856 892 758 C 900 664 880 588 826 528" fill="none" stroke="#6B7C8D" stroke-width="56" stroke-linecap="round"/>
+    <path d="M 656 906 C 802 924 882 856 892 758 C 900 664 880 588 826 528" fill="none" stroke="url(#tailGrad)" stroke-width="47" stroke-linecap="round"/>
+    <g fill="#5F7083" opacity=".32">
+      <ellipse cx="792" cy="884" rx="8" ry="22" transform="rotate(-34 792 884)"/>
+      <ellipse cx="880" cy="792" rx="8" ry="22" transform="rotate(-80 880 792)"/>
+      <ellipse cx="888" cy="678" rx="8" ry="22" transform="rotate(-104 888 678)"/>
+    </g>
+    <ellipse cx="782" cy="862" rx="10" ry="26" fill="#FFFFFF" opacity=".18" transform="rotate(-34 782 862)"/>
+  </g>
+
+  <g id="bodyGroup" style="transform-box:view-box;transform-origin:500px 1010px">
+    <path d="M 500 558 C 664 558 764 634 764 776 C 764 920 666 1012 500 1012 C 334 1012 236 920 236 776 C 236 634 336 558 500 558 Z"
+          fill="url(#bodyGrad)" stroke="#6B7C8D" stroke-width="5" stroke-linejoin="round"/>
+    <g clip-path="url(#bodyClip)">
+      <ellipse cx="500" cy="1046" rx="256" ry="112" fill="#2E4052" opacity=".15" filter="url(#blur18)"/>
+      <ellipse cx="366" cy="614" rx="118" ry="60" fill="#FFFFFF" opacity=".2" filter="url(#blur30)"/>
+      <g stroke="#66768A" stroke-width="15" stroke-linecap="round" opacity=".24" fill="none">
+        <path d="M 314 700 C 298 730 294 758 300 786"/><path d="M 296 834 C 286 858 286 880 292 898"/>
+        <path d="M 686 700 C 702 730 706 758 700 786"/><path d="M 704 834 C 714 858 714 880 708 898"/>
+      </g>
+    </g>
+    <ellipse cx="500" cy="822" rx="130" ry="142" fill="url(#bellyGrad)"/>
+    <ellipse cx="500" cy="822" rx="130" ry="142" fill="none" stroke="#A5B3C1" stroke-width="2.5" opacity=".22"/>
+    <ellipse cx="462" cy="744" rx="58" ry="38" fill="#FFFFFF" opacity=".5" filter="url(#blur18)"/>
+    <g transform="rotate(-7 302 972)">
+      <ellipse cx="302" cy="972" rx="96" ry="60" fill="#90A1B1" stroke="#6B7C8D" stroke-width="5"/>
+      <ellipse cx="302" cy="964" rx="92" ry="56" fill="url(#pawGrad)"/>
+      <g stroke="#8A98A7" stroke-width="9" stroke-linecap="round">
+        <path d="M 262 990 L 262 1014"/><path d="M 306 998 L 306 1022"/><path d="M 350 990 L 350 1014"/>
+      </g>
+      <ellipse cx="272" cy="940" rx="46" ry="22" fill="#FFFFFF" opacity=".38"/>
+    </g>
+    <g transform="rotate(7 698 972)">
+      <ellipse cx="698" cy="972" rx="96" ry="60" fill="#90A1B1" stroke="#6B7C8D" stroke-width="5"/>
+      <ellipse cx="698" cy="964" rx="92" ry="56" fill="url(#pawGrad)"/>
+      <g stroke="#8A98A7" stroke-width="9" stroke-linecap="round">
+        <path d="M 650 990 L 650 1014"/><path d="M 694 998 L 694 1022"/><path d="M 738 990 L 738 1014"/>
+      </g>
+      <ellipse cx="660" cy="940" rx="46" ry="22" fill="#FFFFFF" opacity=".38"/>
+    </g>
+  </g>
+
+  <g id="headGroup" style="transform-box:view-box;transform-origin:500px 608px">
+    <g id="headBob" style="transform-box:view-box;transform-origin:500px 608px">
+      <g>
+        <path d="M 264 248 C 228 138 232 44 262 8 C 298 -30 362 4 404 60 C 436 102 470 158 486 190 Z" fill="#93A3B2" stroke="#6B7C8D" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M 300 226 C 276 146 280 82 298 62 C 318 40 350 68 376 110 C 398 146 422 184 434 200 Z" fill="url(#earInGrad)"/>
+        <path d="M 324 168 C 314 122 316 84 326 68" fill="none" stroke="#D8798F" stroke-width="7" stroke-linecap="round" opacity=".42"/>
+      </g>
+      <g>
+        <path d="M 736 248 C 772 138 768 44 738 8 C 702 -30 638 4 596 60 C 564 102 530 158 514 190 Z" fill="#93A3B2" stroke="#6B7C8D" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M 700 226 C 724 146 720 82 702 62 C 682 40 650 68 624 110 C 602 146 578 184 566 200 Z" fill="url(#earInGrad)"/>
+        <path d="M 676 168 C 686 122 684 84 674 68" fill="none" stroke="#D8798F" stroke-width="7" stroke-linecap="round" opacity=".42"/>
+      </g>
+
+      <path d="M 500 56 C 664 56 776 172 776 328 C 776 484 664 592 500 592 C 336 592 224 484 224 328 C 224 172 336 56 500 56 Z"
+            fill="url(#headGrad)" stroke="#6B7C8D" stroke-width="5" stroke-linejoin="round"/>
+
+      <g clip-path="url(#headClip)">
+        <ellipse cx="500" cy="638" rx="340" ry="156" fill="#2E4052" opacity=".16" filter="url(#blur30)"/>
+        <ellipse cx="500" cy="60" rx="300" ry="120" fill="#FFFFFF" opacity=".18" filter="url(#blur30)"/>
+        <g stroke="#66768A" stroke-linecap="round" fill="none" opacity=".4">
+          <path d="M 420 74 C 408 116 408 150 420 178" stroke-width="20"/>
+          <path d="M 478 60 C 470 106 470 146 478 180" stroke-width="24"/>
+          <path d="M 522 60 C 530 106 530 146 522 180" stroke-width="24"/>
+          <path d="M 580 74 C 592 116 592 150 580 178" stroke-width="20"/>
+          <path d="M 356 110 C 342 140 336 168 340 190" stroke-width="15"/>
+          <path d="M 644 110 C 658 140 664 168 660 190" stroke-width="15"/>
+        </g>
+        <g stroke="#66768A" stroke-linecap="round" fill="none" opacity=".3">
+          <path d="M 248 256 C 232 292 228 324 232 352" stroke-width="17"/>
+          <path d="M 230 392 C 222 420 224 444 232 464" stroke-width="15"/>
+          <path d="M 752 256 C 768 292 772 324 768 352" stroke-width="17"/>
+          <path d="M 770 392 C 778 420 776 444 768 464" stroke-width="15"/>
+        </g>
+        <ellipse cx="412" cy="176" rx="152" ry="84" fill="#FFFFFF" opacity=".24" filter="url(#blur30)"/>
+      </g>
+
+      <ellipse cx="500" cy="484" rx="148" ry="86" fill="url(#muzzleGrad)"/>
+      <ellipse cx="500" cy="484" rx="148" ry="86" fill="none" stroke="#C6D0DA" stroke-width="2.5" opacity=".38"/>
+      <ellipse cx="424" cy="468" rx="74" ry="54" fill="#FFFFFF" opacity=".65" filter="url(#blur12)"/>
+      <ellipse cx="576" cy="468" rx="74" ry="54" fill="#FFFFFF" opacity=".65" filter="url(#blur12)"/>
+      <ellipse cx="500" cy="556" rx="118" ry="34" fill="#8B9BAB" opacity=".16" filter="url(#blur18)"/>
+
+      <g id="eyeL" style="transform-box:view-box;transform-origin:372px 272px">
+        <ellipse cx="372" cy="272" rx="80" ry="84" fill="url(#eyeWhiteGrad)"/>
+        <g clip-path="url(#eyeClipL)">
+          <ellipse cx="372" cy="281" rx="50" ry="58" fill="url(#irisGrad)"/>
+          <ellipse cx="372" cy="281" rx="50" ry="58" fill="none" stroke="#54731F" stroke-width="4" opacity=".45"/>
+          <g id="pupilL">
+            <ellipse cx="372" cy="283" rx="21" ry="44" fill="#262C34"/>
+            <ellipse cx="372" cy="283" rx="21" ry="44" fill="none" stroke="#151A20" stroke-width="3" opacity=".48"/>
+            <circle cx="352" cy="256" r="19" fill="#FFFFFF" opacity=".95"/>
+            <circle cx="390" cy="306" r="10" fill="#FFFFFF" opacity=".7"/>
+          </g>
+          <ellipse cx="372" cy="196" rx="86" ry="42" fill="#33465A" opacity=".18" filter="url(#blur18)"/>
+        </g>
+        <ellipse cx="372" cy="272" rx="80" ry="84" fill="none" stroke="#6B7C8D" stroke-width="4"/>
+      </g>
+      <g id="eyeR" style="transform-box:view-box;transform-origin:628px 272px">
+        <ellipse cx="628" cy="272" rx="80" ry="84" fill="url(#eyeWhiteGrad)"/>
+        <g clip-path="url(#eyeClipR)">
+          <ellipse cx="628" cy="281" rx="50" ry="58" fill="url(#irisGrad)"/>
+          <ellipse cx="628" cy="281" rx="50" ry="58" fill="none" stroke="#54731F" stroke-width="4" opacity=".45"/>
+          <g id="pupilR">
+            <ellipse cx="628" cy="283" rx="21" ry="44" fill="#262C34"/>
+            <ellipse cx="628" cy="283" rx="21" ry="44" fill="none" stroke="#151A20" stroke-width="3" opacity=".48"/>
+            <circle cx="608" cy="256" r="19" fill="#FFFFFF" opacity=".95"/>
+            <circle cx="646" cy="306" r="10" fill="#FFFFFF" opacity=".7"/>
+          </g>
+          <ellipse cx="628" cy="196" rx="86" ry="42" fill="#33465A" opacity=".18" filter="url(#blur18)"/>
+        </g>
+        <ellipse cx="628" cy="272" rx="80" ry="84" fill="none" stroke="#6B7C8D" stroke-width="4"/>
+      </g>
+
+      <g fill="none" stroke="#55626F" stroke-linecap="round" opacity=".92">
+        <path d="M 286 174 C 318 152 360 148 392 166" stroke-width="24"/>
+        <path d="M 714 174 C 682 152 640 148 608 166" stroke-width="24"/>
+      </g>
+
+      <g>
+        <path d="M 500 404 C 542 404 564 418 564 440 C 564 466 534 484 500 484 C 466 484 436 466 436 440 C 436 418 458 404 500 404 Z" fill="url(#noseGrad)"/>
+        <path d="M 500 404 C 542 404 564 418 564 440 C 564 466 534 484 500 484 C 466 484 436 466 436 440 C 436 418 458 404 500 404 Z" fill="none" stroke="#CE7189" stroke-width="2.5" opacity=".4"/>
+        <g fill="none" stroke="#D67F95" stroke-width="5" stroke-linecap="round" opacity=".7">
+          <path d="M 476 438 C 478 452 487 462 500 464"/><path d="M 524 438 C 522 452 513 462 500 464"/>
+        </g>
+        <ellipse cx="478" cy="424" rx="25" ry="13" fill="#FFFFFF" opacity=".48" transform="rotate(-18 478 424)"/>
+      </g>
+
+      <g id="mouthClosed">
+        <path d="M 500 484 L 500 514" fill="none" stroke="#59666F" stroke-width="12" stroke-linecap="round"/>
+        <path d="M 500 514 C 484 542 452 546 428 524" fill="none" stroke="#59666F" stroke-width="12" stroke-linecap="round"/>
+        <path d="M 500 514 C 516 542 548 546 572 524" fill="none" stroke="#59666F" stroke-width="12" stroke-linecap="round"/>
+      </g>
+      <g id="mouthOpen" data-mouth-y="484" style="display:none">
+        <ellipse cx="500" cy="508" rx="76" ry="54" fill="#7A2833"/>
+        <ellipse cx="500" cy="508" rx="76" ry="54" fill="none" stroke="#57161F" stroke-width="4" opacity=".55"/>
+        <ellipse cx="500" cy="540" rx="46" ry="26" fill="#E8768A"/>
+        <ellipse cx="500" cy="548" rx="38" ry="16" fill="#D45C73" opacity=".5"/>
+        <path d="M 452 466 L 472 488 L 492 464 Z" fill="#FCFDFE"/>
+        <path d="M 548 466 L 528 488 L 508 464 Z" fill="#FCFDFE"/>
+      </g>
+
+      <g stroke="#7D8B98" stroke-width="7.5" stroke-linecap="round" fill="none" opacity=".78">
+        <path d="M 356 440 C 288 422 232 416 180 426"/><path d="M 350 478 C 278 474 220 484 168 502"/>
+        <path d="M 356 516 C 290 526 236 546 192 572"/>
+        <path d="M 644 440 C 712 422 768 416 820 426"/><path d="M 650 478 C 722 474 780 484 832 502"/>
+        <path d="M 644 516 C 710 526 764 546 808 572"/>
+      </g>
+
+      <g id="blush" opacity="0">
+        <ellipse cx="256" cy="464" rx="48" ry="30" fill="#F09AA8" opacity=".6" filter="url(#blur18)"/>
+        <ellipse cx="744" cy="464" rx="48" ry="30" fill="#F09AA8" opacity=".6" filter="url(#blur18)"/>
+      </g>
+    </g>
+  </g>
+
+  <g id="props"></g>
+</svg>
+</template>
+
+
+<!-- ==================================================================
+     角色 2：皮卡丘
+=================================================================== -->
+<template id="tpl-pikachu">
+<svg viewBox="0 0 1000 1080" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-label="皮卡丘">
+  <defs>
+    <radialGradient id="pkBody" cx="30%" cy="10%" r="102%">
+      <stop offset="0%"  stop-color="#FFF3A8"/><stop offset="20%" stop-color="#FFE45C"/>
+      <stop offset="52%" stop-color="#FBD338"/><stop offset="80%" stop-color="#E8B81E"/>
+      <stop offset="100%" stop-color="#C9971A"/>
+    </radialGradient>
+    <radialGradient id="pkLimb" cx="34%" cy="14%" r="96%">
+      <stop offset="0%"  stop-color="#FFE97E"/><stop offset="52%" stop-color="#F6CB2C"/>
+      <stop offset="100%" stop-color="#D8A318"/>
+    </radialGradient>
+    <radialGradient id="pkCheek" cx="36%" cy="26%" r="86%">
+      <stop offset="0%"  stop-color="#FB8A7C"/><stop offset="52%" stop-color="#EC5347"/>
+      <stop offset="100%" stop-color="#C33A31"/>
+    </radialGradient>
+    <linearGradient id="pkEarL" gradientUnits="userSpaceOnUse" x1="238" y1="52" x2="392" y2="302">
+      <stop offset="0%" stop-color="#3A2A14"/><stop offset="31%" stop-color="#3A2A14"/>
+      <stop offset="32%" stop-color="#FBD338"/><stop offset="100%" stop-color="#E8B81E"/>
+    </linearGradient>
+    <linearGradient id="pkEarR" gradientUnits="userSpaceOnUse" x1="762" y1="52" x2="608" y2="302">
+      <stop offset="0%" stop-color="#3A2A14"/><stop offset="31%" stop-color="#3A2A14"/>
+      <stop offset="32%" stop-color="#FBD338"/><stop offset="100%" stop-color="#E8B81E"/>
+    </linearGradient>
+    <linearGradient id="pkTail" x1="0.2" y1="0.8" x2="0.8" y2="0.2">
+      <stop offset="0%"  stop-color="#E8B81E"/><stop offset="100%" stop-color="#FFE45C"/>
+    </linearGradient>
+    <radialGradient id="pkWide" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#3A4A5C" stop-opacity=".3"/>
+      <stop offset="62%" stop-color="#3A4A5C" stop-opacity=".1"/>
+      <stop offset="100%" stop-color="#3A4A5C" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="pkB12" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+    <filter id="pkB22" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+    <clipPath id="pkBodyClip">
+      <path d="M 500 232 C 706 232 836 384 836 604 C 836 830 692 1006 500 1006 C 308 1006 164 830 164 604 C 164 384 294 232 500 232 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="500" cy="1022" rx="300" ry="42" fill="url(#pkWide)"/>
+
+  <!-- 闪电尾 -->
+  <g id="tailGroup" style="transform-box:view-box;transform-origin:742px 806px">
+    <path d="M 708 850 L 796 736 L 750 700 L 894 556 L 936 598 L 1050 448"
+          fill="none" stroke="#A87A12" stroke-width="104" stroke-linejoin="miter" stroke-linecap="butt"/>
+    <path d="M 708 850 L 796 736 L 750 700 L 894 556 L 936 598 L 1050 448"
+          fill="none" stroke="url(#pkTail)" stroke-width="86" stroke-linejoin="miter" stroke-linecap="butt"/>
+    <path d="M 706 852 L 742 796" fill="none" stroke="#8A6218" stroke-width="100" stroke-linecap="butt"/>
+    <path d="M 782 764 L 872 662" fill="none" stroke="#FFF6B0" stroke-width="10" stroke-linecap="round" opacity=".5"/>
+  </g>
+
+  <!-- 身体 -->
+  <g id="bodyGroup" style="transform-box:view-box;transform-origin:500px 1010px">
+    <path d="M 500 232 C 706 232 836 384 836 604 C 836 830 692 1006 500 1006 C 308 1006 164 830 164 604 C 164 384 294 232 500 232 Z"
+          fill="url(#pkBody)" stroke="#A87A12" stroke-width="5.5" stroke-linejoin="round"/>
+
+    <g clip-path="url(#pkBodyClip)">
+      <ellipse cx="500" cy="1050" rx="290" ry="120" fill="#8A6218" opacity=".16" filter="url(#pkB22)"/>
+      <ellipse cx="336" cy="330" rx="150" ry="100" fill="#FFFCE0" opacity=".28" filter="url(#pkB22)"/>
+      <ellipse cx="500" cy="808" rx="186" ry="152" fill="#FFF7CC" opacity=".38" filter="url(#pkB22)"/>
+      <ellipse cx="500" cy="1002" rx="230" ry="72" fill="#E8B81E" opacity=".28" filter="url(#pkB22)"/>
+    </g>
+
+    <!-- 脚 -->
+    <g transform="rotate(-6 344 976)">
+      <ellipse cx="344" cy="976" rx="104" ry="52" fill="url(#pkLimb)" stroke="#A87A12" stroke-width="5"/>
+      <g stroke="#C9971A" stroke-width="9" stroke-linecap="round">
+        <path d="M 296 992 L 292 1014"/><path d="M 344 1000 L 344 1022"/><path d="M 392 992 L 396 1014"/>
+      </g>
+    </g>
+    <g transform="rotate(6 656 976)">
+      <ellipse cx="656" cy="976" rx="104" ry="52" fill="url(#pkLimb)" stroke="#A87A12" stroke-width="5"/>
+      <g stroke="#C9971A" stroke-width="9" stroke-linecap="round">
+        <path d="M 604 992 L 600 1014"/><path d="M 656 1000 L 656 1022"/><path d="M 708 992 L 712 1014"/>
+      </g>
+    </g>
+
+    <!-- 手 -->
+    <g transform="rotate(-24 210 748)">
+      <ellipse cx="210" cy="748" rx="86" ry="58" fill="url(#pkLimb)" stroke="#A87A12" stroke-width="5"/>
+      <g stroke="#C9971A" stroke-width="9" stroke-linecap="round">
+        <path d="M 168 776 L 152 796"/><path d="M 214 782 L 212 806"/><path d="M 258 776 L 274 796"/>
+      </g>
+    </g>
+    <g transform="rotate(24 790 748)">
+      <ellipse cx="790" cy="748" rx="86" ry="58" fill="url(#pkLimb)" stroke="#A87A12" stroke-width="5"/>
+      <g stroke="#C9971A" stroke-width="9" stroke-linecap="round">
+        <path d="M 832 776 L 848 796"/><path d="M 786 782 L 788 806"/><path d="M 742 776 L 726 796"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- 头（长耳 + 五官） -->
+  <g id="headGroup" style="transform-box:view-box;transform-origin:500px 592px">
+    <g id="headBob" style="transform-box:view-box;transform-origin:500px 592px">
+
+      <!-- 左耳 -->
+      <path d="M 316 352 C 286 262 258 158 236 62 C 230 34 258 20 278 42 C 324 98 374 232 398 348 Z"
+            fill="url(#pkEarL)" stroke="#A87A12" stroke-width="5.5" stroke-linejoin="round"/>
+      <!-- 右耳 -->
+      <path d="M 684 352 C 714 262 742 158 764 62 C 770 34 742 20 722 42 C 676 98 626 232 602 348 Z"
+            fill="url(#pkEarR)" stroke="#A87A12" stroke-width="5.5" stroke-linejoin="round"/>
+
+      <!-- 脸颊电气袋 -->
+      <ellipse cx="258" cy="560" rx="82" ry="78" fill="url(#pkCheek)"/>
+      <ellipse cx="258" cy="560" rx="82" ry="78" fill="none" stroke="#A82E27" stroke-width="4" opacity=".45"/>
+      <ellipse cx="742" cy="560" rx="82" ry="78" fill="url(#pkCheek)"/>
+      <ellipse cx="742" cy="560" rx="82" ry="78" fill="none" stroke="#A82E27" stroke-width="4" opacity=".45"/>
+
+      <!-- 眼睛 -->
+      <g id="eyeL" style="transform-box:view-box;transform-origin:394px 462px">
+        <ellipse cx="394" cy="462" rx="56" ry="62" fill="#2B2419"/>
+        <g id="pupilL">
+          <circle cx="374" cy="438" r="21" fill="#FFFFFF" opacity=".96"/>
+          <circle cx="414" cy="488" r="10" fill="#FFFFFF" opacity=".72"/>
+        </g>
+      </g>
+      <g id="eyeR" style="transform-box:view-box;transform-origin:606px 462px">
+        <ellipse cx="606" cy="462" rx="56" ry="62" fill="#2B2419"/>
+        <g id="pupilR">
+          <circle cx="586" cy="438" r="21" fill="#FFFFFF" opacity=".96"/>
+          <circle cx="626" cy="488" r="10" fill="#FFFFFF" opacity=".72"/>
+        </g>
+      </g>
+
+      <!-- 鼻子 + 嘴 -->
+      <ellipse cx="500" cy="508" rx="11" ry="9" fill="#2B2419"/>
+      <path d="M 500 517 L 500 530" stroke="#2B2419" stroke-width="6.5" stroke-linecap="round"/>
+
+      <g id="mouthClosed">
+        <path d="M 500 530 C 482 556 460 560 444 546" fill="none" stroke="#3A3126" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 500 530 C 518 556 540 560 556 546" fill="none" stroke="#3A3126" stroke-width="10" stroke-linecap="round"/>
+      </g>
+      <g id="mouthOpen" data-mouth-y="552" style="display:none">
+        <ellipse cx="500" cy="556" rx="66" ry="46" fill="#6E1F2E"/>
+        <ellipse cx="500" cy="556" rx="66" ry="46" fill="none" stroke="#4A111C" stroke-width="4" opacity=".5"/>
+        <ellipse cx="500" cy="580" rx="38" ry="20" fill="#EE7E8F"/>
+        <path d="M 452 524 L 468 544 L 484 522 Z" fill="#FCFDFE"/>
+        <path d="M 548 524 L 532 544 L 516 522 Z" fill="#FCFDFE"/>
+      </g>
+
+      <g id="blush" opacity="0">
+        <ellipse cx="258" cy="538" rx="66" ry="44" fill="#FF8A7E" opacity=".55" filter="url(#pkB12)"/>
+        <ellipse cx="742" cy="538" rx="66" ry="44" fill="#FF8A7E" opacity=".55" filter="url(#pkB12)"/>
+      </g>
+    </g>
+  </g>
+
+  <g id="props"></g>
+</svg>
+</template>
+
+
+<!-- ==================================================================
+     角色 3：耿鬼
+=================================================================== -->
+<template id="tpl-gengar">
+<svg viewBox="0 0 1000 1080" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-label="耿鬼">
+  <defs>
+    <radialGradient id="gBody" cx="30%" cy="10%" r="104%">
+      <stop offset="0%"  stop-color="#C6AEE8"/><stop offset="22%" stop-color="#A98CD8"/>
+      <stop offset="54%" stop-color="#8B6CC0"/><stop offset="82%" stop-color="#6B4E9E"/>
+      <stop offset="100%" stop-color="#452F6E"/>
+    </radialGradient>
+    <radialGradient id="gLimb" cx="34%" cy="14%" r="96%">
+      <stop offset="0%"  stop-color="#A98CD8"/><stop offset="54%" stop-color="#7E60B2"/>
+      <stop offset="100%" stop-color="#513873"/>
+    </radialGradient>
+    <radialGradient id="gIris" cx="34%" cy="24%" r="88%">
+      <stop offset="0%"  stop-color="#FF8A8F"/><stop offset="40%" stop-color="#EE3D4F"/>
+      <stop offset="76%" stop-color="#B52038"/><stop offset="100%" stop-color="#7C1226"/>
+    </radialGradient>
+    <linearGradient id="gTail" x1="0" y1="0.4" x2="1" y2="0.6">
+      <stop offset="0%"  stop-color="#6B4E9E"/><stop offset="100%" stop-color="#3E2A63"/>
+    </linearGradient>
+    <radialGradient id="gWide" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#2A1C40" stop-opacity=".36"/>
+      <stop offset="62%" stop-color="#2A1C40" stop-opacity=".13"/>
+      <stop offset="100%" stop-color="#2A1C40" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="gB12" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+    <filter id="gB22" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+    <filter id="gB34" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="34"/></filter>
+    <clipPath id="gBodyClip">
+      <path d="M 500 176 C 704 176 846 316 846 528 C 846 700 792 806 700 884 C 632 942 566 982 500 982 C 434 982 368 942 300 884 C 208 806 154 700 154 528 C 154 316 296 176 500 176 Z"/>
+    </clipPath>
+    <clipPath id="gMouthClip">
+      <ellipse cx="500" cy="666" rx="176" ry="88"/>
+    </clipPath>
+    <clipPath id="gMouthClipC">
+      <path d="M 326 630 C 400 720 600 720 674 630 C 596 670 404 670 326 630 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="500" cy="1018" rx="316" ry="44" fill="url(#gWide)"/>
+
+  <!-- 尾巴 -->
+  <g id="tailGroup" style="transform-box:view-box;transform-origin:690px 902px">
+    <path d="M 600 904 C 746 910 858 866 918 782 C 934 812 928 860 900 894 C 856 944 736 960 612 946 Z"
+          fill="url(#gTail)" stroke="#3B2A5E" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+
+  <!-- 身体 -->
+  <g id="bodyGroup" style="transform-box:view-box;transform-origin:500px 1010px">
+    <g fill="#4A3573" stroke="#3B2A5E" stroke-width="4" stroke-linejoin="round">
+      <path d="M 200 386 L 116 348 L 194 442 Z"/>
+      <path d="M 168 508 L 78 508 L 162 574 Z"/>
+      <path d="M 216 632 L 136 682 L 232 686 Z"/>
+      <path d="M 800 386 L 884 348 L 806 442 Z"/>
+      <path d="M 832 508 L 922 508 L 838 574 Z"/>
+      <path d="M 784 632 L 864 682 L 768 686 Z"/>
+    </g>
+
+    <path d="M 500 176 C 704 176 846 316 846 528 C 846 700 792 806 700 884 C 632 942 566 982 500 982 C 434 982 368 942 300 884 C 208 806 154 700 154 528 C 154 316 296 176 500 176 Z"
+          fill="url(#gBody)" stroke="#3B2A5E" stroke-width="5.5" stroke-linejoin="round"/>
+
+    <g clip-path="url(#gBodyClip)">
+      <ellipse cx="500" cy="1030" rx="300" ry="124" fill="#2A1C40" opacity=".28" filter="url(#gB22)"/>
+      <ellipse cx="330" cy="290" rx="150" ry="106" fill="#E4D6FA" opacity=".22" filter="url(#gB34)"/>
+      <ellipse cx="500" cy="840" rx="180" ry="120" fill="#E4D6FA" opacity=".12" filter="url(#gB34)"/>
+      <g stroke="#5C4388" stroke-width="18" stroke-linecap="round" fill="none" opacity=".55">
+        <path d="M 262 452 C 244 520 246 592 266 656"/>
+        <path d="M 738 452 C 756 520 754 592 734 656"/>
+      </g>
+    </g>
+
+    <g transform="rotate(-13 200 702)">
+      <g stroke-linecap="round" fill="none">
+        <g stroke="#3B2A5E" stroke-width="48">
+          <path d="M 158 654 L 118 616"/><path d="M 146 702 L 98 702"/><path d="M 158 750 L 118 788"/>
+        </g>
+        <g stroke="#8B6CC0" stroke-width="34">
+          <path d="M 158 654 L 118 616"/><path d="M 146 702 L 98 702"/><path d="M 158 750 L 118 788"/>
+        </g>
+      </g>
+      <ellipse cx="200" cy="702" rx="96" ry="72" fill="url(#gLimb)" stroke="#3B2A5E" stroke-width="5"/>
+    </g>
+    <g transform="rotate(13 800 702)">
+      <g stroke-linecap="round" fill="none">
+        <g stroke="#3B2A5E" stroke-width="48">
+          <path d="M 842 654 L 882 616"/><path d="M 854 702 L 902 702"/><path d="M 842 750 L 882 788"/>
+        </g>
+        <g stroke="#8B6CC0" stroke-width="34">
+          <path d="M 842 654 L 882 616"/><path d="M 854 702 L 902 702"/><path d="M 842 750 L 882 788"/>
+        </g>
+      </g>
+      <ellipse cx="800" cy="702" rx="96" ry="72" fill="url(#gLimb)" stroke="#3B2A5E" stroke-width="5"/>
+    </g>
+
+    <g transform="rotate(-4 356 952)">
+      <ellipse cx="356" cy="952" rx="112" ry="56" fill="url(#gLimb)" stroke="#3B2A5E" stroke-width="5"/>
+      <g stroke="#3B2A5E" stroke-width="10" stroke-linecap="round">
+        <path d="M 300 972 L 294 996"/><path d="M 356 982 L 356 1006"/><path d="M 412 972 L 418 996"/>
+      </g>
+    </g>
+    <g transform="rotate(4 644 952)">
+      <ellipse cx="644" cy="952" rx="112" ry="56" fill="url(#gLimb)" stroke="#3B2A5E" stroke-width="5"/>
+      <g stroke="#3B2A5E" stroke-width="10" stroke-linecap="round">
+        <path d="M 588 972 L 582 996"/><path d="M 644 982 L 644 1006"/><path d="M 700 972 L 706 996"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- 头（尖角 + 红眼咧嘴） -->
+  <g id="headGroup" style="transform-box:view-box;transform-origin:500px 560px">
+    <g id="headBob" style="transform-box:view-box;transform-origin:500px 560px">
+
+      <path d="M 374 232 C 344 146 300 76 264 42 C 248 26 266 4 292 14 C 366 40 442 144 470 236 Z"
+            fill="url(#gBody)" stroke="#3B2A5E" stroke-width="5.5" stroke-linejoin="round"/>
+      <path d="M 626 232 C 656 146 700 76 736 42 C 752 26 734 4 708 14 C 634 40 558 144 530 236 Z"
+            fill="url(#gBody)" stroke="#3B2A5E" stroke-width="5.5" stroke-linejoin="round"/>
+
+      <g stroke="#3B2A5E" stroke-width="11" stroke-linecap="round" fill="none" opacity=".85">
+        <path d="M 288 390 C 322 356 372 348 404 366"/>
+        <path d="M 712 390 C 678 356 628 348 596 366"/>
+      </g>
+
+      <g id="eyeL" style="transform-box:view-box;transform-origin:366px 486px">
+        <ellipse cx="366" cy="486" rx="92" ry="88" fill="#FFFFFF"/>
+        <ellipse cx="366" cy="490" rx="56" ry="60" fill="url(#gIris)"/>
+        <g id="pupilL">
+          <ellipse cx="366" cy="492" rx="25" ry="32" fill="#1A1022"/>
+          <circle cx="350" cy="470" r="15" fill="#FFFFFF" opacity=".92"/>
+        </g>
+        <ellipse cx="366" cy="486" rx="92" ry="88" fill="none" stroke="#3B2A5E" stroke-width="5.5"/>
+      </g>
+      <g id="eyeR" style="transform-box:view-box;transform-origin:634px 486px">
+        <ellipse cx="634" cy="486" rx="92" ry="88" fill="#FFFFFF"/>
+        <ellipse cx="634" cy="490" rx="56" ry="60" fill="url(#gIris)"/>
+        <g id="pupilR">
+          <ellipse cx="634" cy="492" rx="25" ry="32" fill="#1A1022"/>
+          <circle cx="618" cy="470" r="15" fill="#FFFFFF" opacity=".92"/>
+        </g>
+        <ellipse cx="634" cy="486" rx="92" ry="88" fill="none" stroke="#3B2A5E" stroke-width="5.5"/>
+      </g>
+
+      <g id="mouthClosed">
+        <path d="M 326 630 C 400 720 600 720 674 630 C 596 670 404 670 326 630 Z"
+              fill="#240A2C" stroke="#3B2A5E" stroke-width="4" stroke-linejoin="round"/>
+        <g clip-path="url(#gMouthClipC)" fill="#FFFFFF">
+          <path d="M 352 632 L 380 684 L 408 632 Z"/>
+          <path d="M 424 638 L 452 690 L 480 640 Z"/>
+          <path d="M 520 640 L 548 690 L 576 638 Z"/>
+          <path d="M 592 632 L 620 684 L 648 632 Z"/>
+        </g>
+      </g>
+      <g id="mouthOpen" data-mouth-y="666" style="display:none">
+        <ellipse cx="500" cy="666" rx="176" ry="88" fill="#240A2C"/>
+        <ellipse cx="500" cy="666" rx="176" ry="88" fill="none" stroke="#3B2A5E" stroke-width="5"/>
+        <g clip-path="url(#gMouthClip)">
+          <g fill="#FFFFFF">
+            <path d="M 356 596 L 392 668 L 428 594 Z"/>
+            <path d="M 436 600 L 470 676 L 504 598 Z"/>
+            <path d="M 516 600 L 550 676 L 584 598 Z"/>
+            <path d="M 592 596 L 628 668 L 660 594 Z"/>
+            <path d="M 366 736 L 400 664 L 434 738 Z"/>
+            <path d="M 446 730 L 478 656 L 510 732 Z"/>
+            <path d="M 522 732 L 554 656 L 586 730 Z"/>
+            <path d="M 600 738 L 634 664 L 666 736 Z"/>
+          </g>
+          <ellipse cx="500" cy="694" rx="104" ry="42" fill="#C8385C"/>
+          <ellipse cx="500" cy="702" rx="84" ry="26" fill="#9C2745" opacity=".6"/>
+        </g>
+      </g>
+
+      <g id="blush" opacity="0">
+        <ellipse cx="228" cy="600" rx="62" ry="42" fill="#FF6E96" opacity=".5" filter="url(#gB12)"/>
+        <ellipse cx="772" cy="600" rx="62" ry="42" fill="#FF6E96" opacity=".5" filter="url(#gB12)"/>
+      </g>
+    </g>
+  </g>
+
+  <g id="props"></g>
+</svg>
+</template>
+
+
+<!-- ==================================================================
+     角色 4：可达鸭
+=================================================================== -->
+<template id="tpl-psyduck">
+<svg viewBox="0 0 1000 1080" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-label="可达鸭">
+  <defs>
+    <radialGradient id="pdBody" cx="30%" cy="10%" r="104%">
+      <stop offset="0%"  stop-color="#FFEFA8"/><stop offset="22%" stop-color="#FFE27A"/>
+      <stop offset="54%" stop-color="#F7CB41"/><stop offset="82%" stop-color="#DFAE22"/>
+      <stop offset="100%" stop-color="#B98A18"/>
+    </radialGradient>
+    <radialGradient id="pdLimb" cx="34%" cy="14%" r="96%">
+      <stop offset="0%"  stop-color="#FFE27A"/><stop offset="54%" stop-color="#F0BE2E"/>
+      <stop offset="100%" stop-color="#C9971A"/>
+    </radialGradient>
+    <linearGradient id="pdBeak" x1="0.2" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"  stop-color="#F8C558"/><stop offset="46%" stop-color="#E8A62E"/>
+      <stop offset="100%" stop-color="#BC7C12"/>
+    </linearGradient>
+    <radialGradient id="pdWide" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#4A3A10" stop-opacity=".3"/>
+      <stop offset="62%" stop-color="#4A3A10" stop-opacity=".11"/>
+      <stop offset="100%" stop-color="#4A3A10" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="pdB12" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12"/></filter>
+    <filter id="pdB22" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+    <clipPath id="pdBodyClip">
+      <path d="M 500 178 C 706 178 838 328 838 552 C 838 742 764 870 660 944 C 604 984 552 1002 500 1002 C 448 1002 396 984 340 944 C 236 870 162 742 162 552 C 162 328 294 178 500 178 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="500" cy="1020" rx="304" ry="42" fill="url(#pdWide)"/>
+
+  <!-- 小尾巴 -->
+  <g id="tailGroup" style="transform-box:view-box;transform-origin:706px 872px">
+    <path d="M 706 872 C 796 864 862 826 892 768" fill="none" stroke="#B98A18" stroke-width="54" stroke-linecap="round"/>
+    <path d="M 706 872 C 796 864 862 826 892 768" fill="none" stroke="url(#pdLimb)" stroke-width="44" stroke-linecap="round"/>
+  </g>
+
+  <!-- 身体 -->
+  <g id="bodyGroup" style="transform-box:view-box;transform-origin:500px 1010px">
+    <path d="M 500 178 C 706 178 838 328 838 552 C 838 742 764 870 660 944 C 604 984 552 1002 500 1002 C 448 1002 396 984 340 944 C 236 870 162 742 162 552 C 162 328 294 178 500 178 Z"
+          fill="url(#pdBody)" stroke="#B98A18" stroke-width="5.5" stroke-linejoin="round"/>
+
+    <g clip-path="url(#pdBodyClip)">
+      <ellipse cx="500" cy="1052" rx="292" ry="120" fill="#8A6218" opacity=".16" filter="url(#pdB22)"/>
+      <ellipse cx="334" cy="300" rx="152" ry="104" fill="#FFFBE0" opacity=".3" filter="url(#pdB22)"/>
+      <ellipse cx="500" cy="852" rx="176" ry="128" fill="#FFF3C0" opacity=".45" filter="url(#pdB22)"/>
+    </g>
+
+    <!-- 蹼足 -->
+    <g transform="rotate(-5 340 962)">
+      <path d="M 232 972 C 244 928 300 906 344 908 C 390 910 444 934 452 976 C 456 998 440 1014 412 1012 C 372 1008 312 1008 268 1012 C 240 1014 226 998 232 972 Z"
+            fill="url(#pdBeak)" stroke="#B87A12" stroke-width="5" stroke-linejoin="round"/>
+      <g stroke="#B87A12" stroke-width="5" stroke-linecap="round" opacity=".65">
+        <path d="M 274 918 L 292 1006"/><path d="M 344 910 L 344 1008"/><path d="M 414 916 L 396 1006"/>
+      </g>
+    </g>
+    <g transform="rotate(5 660 962)">
+      <path d="M 768 972 C 756 928 700 906 656 908 C 610 910 556 934 548 976 C 544 998 560 1014 588 1012 C 628 1008 688 1008 732 1012 C 760 1014 774 998 768 972 Z"
+            fill="url(#pdBeak)" stroke="#B87A12" stroke-width="5" stroke-linejoin="round"/>
+      <g stroke="#B87A12" stroke-width="5" stroke-linecap="round" opacity=".65">
+        <path d="M 726 918 L 708 1006"/><path d="M 656 910 L 656 1008"/><path d="M 586 916 L 604 1006"/>
+      </g>
+    </g>
+
+    <!-- 蹼手 -->
+    <g transform="rotate(-16 196 706)">
+      <path d="M 168 640 C 226 632 268 664 276 712 C 284 760 250 792 200 788 C 156 784 128 750 132 706 C 134 676 146 646 168 640 Z"
+            fill="url(#pdBeak)" stroke="#B87A12" stroke-width="5" stroke-linejoin="round"/>
+      <g stroke="#B87A12" stroke-width="5" stroke-linecap="round" opacity=".6">
+        <path d="M 176 660 L 164 714"/><path d="M 208 646 L 206 716"/><path d="M 240 660 L 248 712"/>
+      </g>
+    </g>
+    <g transform="rotate(16 804 706)">
+      <path d="M 832 640 C 774 632 732 664 724 712 C 716 760 750 792 800 788 C 844 784 872 750 868 706 C 866 676 854 646 832 640 Z"
+            fill="url(#pdBeak)" stroke="#B87A12" stroke-width="5" stroke-linejoin="round"/>
+      <g stroke="#B87A12" stroke-width="5" stroke-linecap="round" opacity=".6">
+        <path d="M 824 660 L 836 714"/><path d="M 792 646 L 794 716"/><path d="M 760 660 L 752 712"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- 头（呆毛 + 呆眼 + 鸭嘴） -->
+  <g id="headGroup" style="transform-box:view-box;transform-origin:500px 560px">
+    <g id="headBob" style="transform-box:view-box;transform-origin:500px 560px">
+
+      <g stroke="#3A342A" stroke-width="14" fill="none" stroke-linecap="round">
+        <path d="M 452 194 C 440 140 420 90 392 52"/>
+        <path d="M 500 184 C 500 128 500 74 500 36"/>
+        <path d="M 548 194 C 560 140 580 90 608 52"/>
+      </g>
+
+      <g id="eyeL" style="transform-box:view-box;transform-origin:368px 436px">
+        <ellipse cx="368" cy="436" rx="80" ry="86" fill="#FFFFFF"/>
+        <ellipse cx="368" cy="436" rx="80" ry="86" fill="none" stroke="#C9A62E" stroke-width="4.5" opacity=".7"/>
+        <g id="pupilL">
+          <ellipse cx="382" cy="424" rx="22" ry="25" fill="#26221C"/>
+          <circle cx="375" cy="415" r="7.5" fill="#FFFFFF" opacity=".9"/>
+        </g>
+      </g>
+      <g id="eyeR" style="transform-box:view-box;transform-origin:632px 436px">
+        <ellipse cx="632" cy="436" rx="80" ry="86" fill="#FFFFFF"/>
+        <ellipse cx="632" cy="436" rx="80" ry="86" fill="none" stroke="#C9A62E" stroke-width="4.5" opacity=".7"/>
+        <g id="pupilR">
+          <ellipse cx="618" cy="424" rx="22" ry="25" fill="#26221C"/>
+          <circle cx="611" cy="415" r="7.5" fill="#FFFFFF" opacity=".9"/>
+        </g>
+      </g>
+
+      <g stroke="#C9A62E" stroke-width="8" fill="none" stroke-linecap="round" opacity=".5">
+        <path d="M 296 398 C 328 366 410 366 442 398"/>
+        <path d="M 704 398 C 672 366 590 366 558 398"/>
+      </g>
+
+      <!-- 鸭嘴 -->
+      <g id="mouthClosed">
+        <ellipse cx="500" cy="582" rx="164" ry="58" fill="url(#pdBeak)"/>
+        <ellipse cx="500" cy="582" rx="164" ry="58" fill="none" stroke="#B87A12" stroke-width="4.5"/>
+        <path d="M 338 594 C 424 622 576 622 662 594" fill="none" stroke="#B87A12" stroke-width="6" opacity=".7"/>
+        <ellipse cx="460" cy="554" rx="11" ry="7.5" fill="#8A5A0E" opacity=".72"/>
+        <ellipse cx="540" cy="554" rx="11" ry="7.5" fill="#8A5A0E" opacity=".72"/>
+      </g>
+      <g id="mouthOpen" data-mouth-y="584" style="display:none">
+        <ellipse cx="500" cy="584" rx="146" ry="72" fill="#5E3A0E"/>
+        <ellipse cx="500" cy="614" rx="120" ry="40" fill="#E8767F"/>
+        <path d="M 340 564 C 348 508 652 508 660 564 C 586 532 414 532 340 564 Z" fill="url(#pdBeak)" stroke="#B87A12" stroke-width="4.5"/>
+        <path d="M 344 616 C 368 674 632 674 656 616 C 586 650 414 650 344 616 Z" fill="url(#pdBeak)" stroke="#B87A12" stroke-width="4.5"/>
+      </g>
+
+      <g id="blush" opacity="0">
+        <ellipse cx="266" cy="574" rx="60" ry="40" fill="#FF9E8A" opacity=".55" filter="url(#pdB12)"/>
+        <ellipse cx="734" cy="574" rx="60" ry="40" fill="#FF9E8A" opacity=".55" filter="url(#pdB12)"/>
+      </g>
+    </g>
+  </g>
+
+  <g id="props"></g>
+</svg>
+</template>
+
+
+<script>
+(function(){
+"use strict";
+
+var $ = function(id){ return document.getElementById(id); };
+
+/* ============================================================
+   角色配置：外观模板 + 叫声 + 变声参数
+============================================================ */
+var SKINS = {
+  tom:{
+    name:'汤姆猫', tag:'灰蓝虎斑', mouth:{x:500, y:484},
+    cry:{w:'sawtooth', f:[420,800,600,330], lp:[1900,900], q:6, dur:.62, vol:.26, vib:[17,16], mix:.72},
+    purr:{lp:320, mod:26},
+    voice:{rate:1.45, hp:230, drive:1.7, gain:1.75, wet:.15, ir:[.5,2.6],
+           peaks:[[2600,1.1,5]]}
+  },
+  pikachu:{
+    name:'皮卡丘', tag:'电气鼠', mouth:{x:500, y:552},
+    cry:{w:'square', f:[900,1560,1300,980], lp:[3600,2500], q:5, dur:.34, vol:.19, vib:[34,52], mix:.5,
+         ring:78, ringMix:.26},
+    purr:{lp:900, mod:46},
+    voice:{rate:1.86, hp:430, drive:2.3, gain:1.42, wet:.10, ir:[.32,3.2],
+           peaks:[[1150,2.2,-6],[3300,1.4,7]], ring:66, ringMix:.20}
+  },
+  gengar:{
+    name:'耿鬼', tag:'幽灵', mouth:{x:500, y:640},
+    cry:{w:'sawtooth', f:[152,104,126,78], lp:[820,400], q:7, dur:.95, vol:.30, vib:[9,15], mix:.7},
+    purr:{lp:180, mod:14},
+    voice:{rate:.70, hp:60, drive:2.05, gain:2.05, wet:.42, ir:[1.35,1.5],
+           lp:1850, lpQ:.9, peaks:[[420,1.0,8],[2450,1.2,-9]],
+           chorus:[.012,1.6,.008,.42], vib:5.2, vibAmt:.012}
+  },
+  psyduck:{
+    name:'可达鸭', tag:'发呆鸭', mouth:{x:500, y:584},
+    cry:{w:'square', f:[440,352,404,286], lp:[1500,1000], q:4, dur:.56, vol:.23, vib:[23,34], mix:.6, chop:9},
+    purr:{lp:520, mod:20},
+    voice:{rate:.96, hp:140, drive:1.15, gain:1.95, wet:.20, ir:[.45,2.4],
+           lp:3400, lpQ:.9, peaks:[[520,1.6,5],[1150,2.6,9],[4300,1.0,-6]],
+           vib:7, vibAmt:.03}
+  }
+};
+/* 写实皮肤：洋芋给的 AI 生成整图，连背景一起当场景用。
+   mx/my 是标定出来的嘴部坐标（占图片宽高的百分比），声波效果贴在上面。
+   spots 是点击热区（归一化坐标 + 半径），因为每张图角色站位差别很大，
+   不能沿用 SVG 版的按比例分区。 */
+var PHOTO = [
+  /* img  = 静止/闭嘴那一帧（当场景底图）
+     mimg = 说话/张嘴那一帧（只贴在嘴部蒙版里，随音量淡入）
+     mc/mr = 嘴部蒙版的中心与半径（占图片宽高的百分比），靠差值图量出来后目视微调
+     fc/fr = 脸部椭圆（中心/半径，百分比）：_cut.py 照它裁表情块，网页照它摆蒙版
+     expr = 点击反应用的三张表情帧（已裁成脸部小块）
+     spots = 点击热区，照着角色的实际站位标 */
+  { id:'r-pikachu', name:'皮卡丘·写实', base:'pikachu', img:'skin/pikachu_m.jpg', mimg:'skin/pikachu.jpg',
+    mx:44.5, my:49.8, mc:[44.5,50.5], mr:[11,9], fc:[45.5,47.5], fr:[17,12],
+    expr:{ happy:'skin/pikachu_happy.jpg', shock:'skin/pikachu_shock.jpg', angry:'skin/pikachu_angry.jpg' },
+    spots:[{k:'head',x:.45,y:.35,r:.20},{k:'belly',x:.43,y:.71,r:.21},{k:'tail',x:.86,y:.57,r:.16}] },
+  { id:'r-gengar',  name:'耿鬼·写实',   base:'gengar',  img:'skin/gengar_m.jpg',  mimg:'skin/gengar.jpg',
+    mx:53.5, my:55.5, mc:[48,58],   mr:[20,15], fc:[45.5,50], fr:[19,12],
+    expr:{ happy:'skin/gengar_happy.jpg', shock:'skin/gengar_shock.jpg', angry:'skin/gengar_angry.jpg' },
+    spots:[{k:'head',x:.46,y:.45,r:.19},{k:'belly',x:.48,y:.72,r:.21},{k:'tail',x:.88,y:.61,r:.15}] },
+  { id:'r-psyduck', name:'可达鸭·写实', base:'psyduck', img:'skin/psyduck.jpg',   mimg:'skin/psyduck_m.jpg',
+    mx:38,   my:54.2, mc:[34,55.5], mr:[19,12], fc:[42.5,46.5], fr:[21,13],
+    expr:{ happy:'skin/psyduck_happy.jpg', shock:'skin/psyduck_shock.jpg', angry:'skin/psyduck_angry.jpg' },
+    spots:[{k:'head',x:.46,y:.38,r:.19},{k:'belly',x:.45,y:.74,r:.19},{k:'tail',x:.89,y:.74,r:.15}] }
+];
+PHOTO.forEach(function(p){
+  var b = SKINS[p.base];
+  /* 表情块的摆放位置：脸部椭圆外接框 × 1.56（每边外扩 56%），和 _cut.py 一致 */
+  var K = 1.56;
+  var fb = [ p.fc[0] - p.fr[0]*K, p.fc[1] - p.fr[1]*K, p.fr[0]*2*K, p.fr[1]*2*K ];
+  SKINS[p.id] = {
+    name: p.name, kind: 'img', img: p.img, mimg: p.mimg, base: p.base,
+    m: { x: p.mx/100, y: p.my/100 }, mc: p.mc, mr: p.mr, spots: p.spots,
+    expr: p.expr, fb: fb,
+    cry: b.cry, purr: b.purr, voice: b.voice
+  };
+});
+
+var ORDER = ['tom','pikachu','gengar','psyduck'].concat(PHOTO.map(function(p){ return p.id; }));
+var SK = SKINS.tom;
+var cur = 'tom';
+
+/* 迷你头像（皮肤切换栏用） */
+var MINI = {
+  tom:'<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="#DDE5ED"/><path d="M7 13 L10 3 L17 10 Z" fill="#93A3B2"/><path d="M33 13 L30 3 L23 10 Z" fill="#93A3B2"/><ellipse cx="20" cy="23" rx="13.5" ry="12.5" fill="#A4B3C2"/><ellipse cx="14.5" cy="21" rx="3.2" ry="3.8" fill="#262C34"/><ellipse cx="25.5" cy="21" rx="3.2" ry="3.8" fill="#262C34"/><ellipse cx="20" cy="27" rx="3.6" ry="2.7" fill="#F2A5B6"/></svg>',
+  pikachu:'<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="#FFF0B8"/><path d="M12 16 C8 9 6.5 4 8.5 2 C10.5 0 14 6 16 12 Z" fill="#FBD338" stroke="#3A2A14" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 16 C32 9 33.5 4 31.5 2 C29.5 0 26 6 24 12 Z" fill="#FBD338" stroke="#3A2A14" stroke-width="2.4" stroke-linejoin="round"/><ellipse cx="20" cy="24" rx="12.5" ry="11.5" fill="#FBD338"/><ellipse cx="8" cy="26" rx="4.6" ry="4.2" fill="#EC5347"/><ellipse cx="32" cy="26" rx="4.6" ry="4.2" fill="#EC5347"/><ellipse cx="15" cy="20" rx="3.1" ry="3.7" fill="#2B2419"/><ellipse cx="25" cy="20" rx="3.1" ry="3.7" fill="#2B2419"/><ellipse cx="15" cy="19" rx="1.2" ry="1.2" fill="#fff"/><ellipse cx="25" cy="19" rx="1.2" ry="1.2" fill="#fff"/></svg>',
+  gengar:'<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="#E4DBF5"/><path d="M13 15 C11 9 10 6 12 4 C14 2 17 8 18 13 Z" fill="#8B6CC0" stroke="#3B2A5E" stroke-width="1.8"/><path d="M27 15 C29 9 30 6 28 4 C26 2 23 8 22 13 Z" fill="#8B6CC0" stroke="#3B2A5E" stroke-width="1.8"/><ellipse cx="20" cy="24" rx="13" ry="11.5" fill="#8B6CC0"/><ellipse cx="14.6" cy="21" rx="3.9" ry="4" fill="#fff"/><ellipse cx="25.4" cy="21" rx="3.9" ry="4" fill="#fff"/><ellipse cx="14.6" cy="21.4" rx="2.1" ry="2.4" fill="#E0344A"/><ellipse cx="25.4" cy="21.4" rx="2.1" ry="2.4" fill="#E0344A"/><path d="M12.5 28.5 C17 34 23 34 27.5 28.5 C23 31 17 31 12.5 28.5 Z" fill="#240A2C"/><path d="M15 29.4 L16.6 32.2 L18.2 29.4 Z" fill="#fff"/><path d="M21.8 29.4 L23.4 32.2 L25 29.4 Z" fill="#fff"/></svg>',
+  psyduck:'<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" fill="#FFF3C4"/><g stroke="#3A342A" stroke-width="2.1" fill="none" stroke-linecap="round"><path d="M17 14 C16 10 15 7 13.5 5"/><path d="M20 13 C20 9 20 6 20 3.6"/><path d="M23 14 C24 10 25 7 26.5 5"/></g><ellipse cx="20" cy="25" rx="12.5" ry="11.5" fill="#F7CB41"/><ellipse cx="14.5" cy="21.5" rx="4" ry="4.3" fill="#fff"/><ellipse cx="25.5" cy="21.5" rx="4" ry="4.3" fill="#fff"/><ellipse cx="15.6" cy="20.6" rx="1.8" ry="2" fill="#26221C"/><ellipse cx="24.4" cy="20.6" rx="1.8" ry="2" fill="#26221C"/><ellipse cx="20" cy="28.5" rx="6.4" ry="3.6" fill="#E8A62E"/><path d="M14.2 29.2 C17 30.6 23 30.6 25.8 29.2" stroke="#B87A12" stroke-width="1.4" fill="none"/></svg>',
+  'r-pikachu':'<i class="th" style="background-image:url(skin/pikachu.jpg);background-size:240% 240%;background-position:46% 12%"></i>',
+  'r-gengar' :'<i class="th" style="background-image:url(skin/gengar.jpg);background-size:240% 240%;background-position:53% 43%"></i>',
+  'r-psyduck':'<i class="th" style="background-image:url(skin/psyduck.jpg);background-size:240% 240%;background-position:44% 9%"></i>'
+};
+
+/* ============================================================
+   音频基础
+============================================================ */
+var sfxOn = true, ac = null, analyser = null, speakRaf = 0;
+var busy = false;
+
+function ensureAudio(){
+  if(!ac){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    ac = new AC();
+  }
+  if(ac.state === 'suspended'){ try{ ac.resume(); }catch(e){} }
+  return ac;
+}
+
+var IRCACHE = {};
+function getIR(dur, decay){
+  var k = dur + '/' + decay;
+  if(IRCACHE[k]) return IRCACHE[k];
+  var rate = ac.sampleRate, len = Math.max(1, Math.floor(rate*dur));
+  var buf = ac.createBuffer(2, len, rate);
+  for(var c=0;c<2;c++){
+    var d = buf.getChannelData(c);
+    for(var i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, decay);
+  }
+  IRCACHE[k] = buf;
+  return buf;
+}
+
+/* ---- 角色叫声 ---- */
+function cry(mult, durScale, volScale){
+  if(!sfxOn) return;
+  ensureAudio(); if(!ac) return;
+  var c = SK.cry;
+  var base = mult || 1;
+  var dur  = c.dur * (durScale || 1);
+  var t0   = ac.currentTime + 0.01;
+
+  var osc = ac.createOscillator(), osc2 = ac.createOscillator();
+  var lp = ac.createBiquadFilter(), bp = ac.createBiquadFilter(), g = ac.createGain();
+  osc.type = c.w; osc2.type = 'triangle';
+
+  var F = c.f.map(function(v){ return v*base; });
+  osc.frequency.setValueAtTime(F[0], t0);
+  osc.frequency.exponentialRampToValueAtTime(F[1], t0 + dur*0.18);
+  osc.frequency.exponentialRampToValueAtTime(F[2], t0 + dur*0.55);
+  osc.frequency.exponentialRampToValueAtTime(F[3], t0 + dur*0.98);
+  osc2.frequency.setValueAtTime(F[0]*2, t0);
+  osc2.frequency.exponentialRampToValueAtTime(F[1]*2, t0 + dur*0.18);
+  osc2.frequency.exponentialRampToValueAtTime(F[3]*2, t0 + dur*0.98);
+
+  var lfo = ac.createOscillator(), lfoG = ac.createGain();
+  lfo.frequency.value = c.vib[0]; lfoG.gain.value = c.vib[1]*base;
+  lfo.connect(lfoG); lfoG.connect(osc.frequency);
+
+  lp.type = 'lowpass'; lp.Q.value = c.q;
+  lp.frequency.setValueAtTime(c.lp[0], t0);
+  lp.frequency.exponentialRampToValueAtTime(c.lp[1], t0 + dur);
+  bp.type = 'bandpass'; bp.Q.value = 1.6;
+  bp.frequency.value = c.lp[0] * 0.55 + 300;
+
+  var vol = c.vol * (volScale || 1);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.045);
+  g.gain.setValueAtTime(vol, t0 + dur*0.62);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+  if(c.chop){
+    var chop = ac.createOscillator(), cg = ac.createGain();
+    chop.type = 'square'; chop.frequency.value = c.chop * base; cg.gain.value = 0.42;
+    var chopDepth = ac.createGain(); chopDepth.gain.value = 0.58;
+    chop.connect(cg); cg.connect(chopDepth.gain);
+    // 让 g.gain 被颤音调制：用一个中间 gain
+    var g2 = ac.createGain(); g2.gain.value = 1;
+    chopDepth.connect(g2.gain);
+    g.disconnect();
+    g.connect(g2);
+    g = g2;
+  }
+
+  var mix = ac.createGain(); mix.gain.value = c.mix;
+  osc.connect(lp); osc2.connect(mix); mix.connect(lp);
+  lp.connect(bp); bp.connect(g);
+  g.connect(ac.destination);
+
+  var conv = ac.createConvolver(); conv.buffer = getIR(SK.voice.ir[0], SK.voice.ir[1]);
+  var wet = ac.createGain(); wet.gain.value = Math.min(.35, SK.voice.wet + .05);
+  g.connect(conv); conv.connect(wet); wet.connect(ac.destination);
+
+  osc.start(t0); osc2.start(t0); lfo.start(t0); if(c.chop) chop.start(t0);
+  var end = t0 + dur + 0.05;
+  osc.stop(end); osc2.stop(end); lfo.stop(end); if(c.chop) chop.stop(end);
+}
+
+/* ---- 呼噜 / 低鸣 ---- */
+function purr(dur){
+  if(!sfxOn) return;
+  ensureAudio(); if(!ac) return;
+  dur = dur || 1.7;
+  var t0 = ac.currentTime + 0.01;
+  var len = Math.floor(ac.sampleRate * dur);
+  var buf = ac.createBuffer(1, len, ac.sampleRate);
+  var d = buf.getChannelData(0);
+  var p = SK.purr;
+  for(var i=0;i<len;i++){
+    var t = i/ac.sampleRate;
+    var mod = 0.5 + 0.5*Math.sin(2*Math.PI*p.mod*t);
+    var fade = Math.min(1, t/0.12) * Math.min(1, (dur-t)/0.25);
+    d[i] = (Math.random()*2-1) * mod * fade;
+  }
+  var src = ac.createBufferSource(); src.buffer = buf;
+  var lp = ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = p.lp; lp.Q.value = 2;
+  var g = ac.createGain(); g.gain.value = .34;
+  src.connect(lp); lp.connect(g); g.connect(ac.destination);
+  src.start(t0);
+}
+
+function blip(f1, f2, dur, type, vol){
+  if(!sfxOn) return;
+  ensureAudio(); if(!ac) return;
+  var t0 = ac.currentTime + 0.01;
+  var o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(f1, t0);
+  o.frequency.exponentialRampToValueAtTime(Math.max(40,f2), t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol || 0.16, t0 + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t0); o.stop(t0 + dur + 0.03);
+}
+
+function noiseBurst(dur, fCenter, Q, vol, sweepTo){
+  if(!sfxOn) return;
+  ensureAudio(); if(!ac) return;
+  var t0 = ac.currentTime + 0.01;
+  var len = Math.floor(ac.sampleRate * dur);
+  var buf = ac.createBuffer(1, len, ac.sampleRate);
+  var d = buf.getChannelData(0);
+  for(var i=0;i<len;i++){
+    var t = i/ac.sampleRate;
+    d[i] = (Math.random()*2-1) * Math.pow(1 - t/dur, 1.6);
+  }
+  var src = ac.createBufferSource(); src.buffer = buf;
+  var bp = ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value = Q || 1.2;
+  bp.frequency.setValueAtTime(fCenter, t0);
+  if(sweepTo) bp.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur);
+  var g = ac.createGain(); g.gain.value = vol || 0.2;
+  src.connect(bp); bp.connect(g); g.connect(ac.destination);
+  src.start(t0);
+}
+
+/* ============================================================
+   皮肤装配
+============================================================ */
+var petEl = $('pet');
+var stage = $('stage');
+var scene = $('scene'), sceneIn = $('sceneIn'), pulse = $('pulse'), mouthPatch = $('mouthPatch'), exprPatch = $('exprPatch');
+var E = {};
+var mouthY = 484;
+var sceneOn = false;
+var IMG_W = 1200, IMG_H = 1600;   /* 写实图的原始像素尺寸，用来算 cover 铺满的缩放 */
+
+/* 按 cover 规则算出场景层该多大，这样能在里面用图片自身的百分比坐标定位嘴部 */
+function layoutScene(){
+  if(!SK || SK.kind !== 'img') return;
+  var r = stage.getBoundingClientRect();
+  if(!r.width || !r.height) return;
+  var k = Math.max(r.width/IMG_W, r.height/IMG_H);
+  scene.style.width  = Math.round(IMG_W*k) + 'px';
+  scene.style.height = Math.round(IMG_H*k) + 'px';
+}
+window.addEventListener('resize', function(){ setTimeout(layoutScene, 60); });
+
+function buildSvg(id){
+  var tpl = document.getElementById('tpl-' + id);
+  petEl.innerHTML = '';
+  petEl.appendChild(tpl.content.cloneNode(true));
+  petEl.style.display = '';
+  sceneOn = false;
+  stage.classList.remove('sceneon');
+  mouthPatch.style.backgroundImage = 'none';
+  exprPatch.style.backgroundImage = 'none';
+  exprPatch.classList.remove('on');
+  exprPatch.style.display = 'none';
+  sceneIn.style.setProperty('--lv', 0);
+}
+
+function buildScene(sk){
+  petEl.innerHTML = '';
+  petEl.style.display = 'none';
+  sceneIn.style.backgroundImage = 'url(' + sk.img + ')';
+  /* 嘴部换帧：底图=闭嘴，这一层=张嘴，蒙版贴在标定好的嘴上 */
+  mouthPatch.style.backgroundImage = 'url(' + sk.mimg + ')';
+  sceneIn.style.setProperty('--mcx', sk.mc[0] + '%');
+  sceneIn.style.setProperty('--mcy', sk.mc[1] + '%');
+  sceneIn.style.setProperty('--mrx', sk.mr[0] + '%');
+  sceneIn.style.setProperty('--mry', sk.mr[1] + '%');
+  sceneIn.style.setProperty('--lv', 0);
+  /* 表情层：只摆在脸部那一小块上，点击反应时才淡入 */
+  clearTimeout(sceneExpr._t);
+  exprPatch.classList.remove('on');
+  exprPatch.style.backgroundImage = 'none';
+  exprPatch.style.left   = sk.fb[0].toFixed(2) + '%';
+  exprPatch.style.top    = sk.fb[1].toFixed(2) + '%';
+  exprPatch.style.width  = sk.fb[2].toFixed(2) + '%';
+  exprPatch.style.height = sk.fb[3].toFixed(2) + '%';
+  exprPatch.style.display = 'block';
+  /* 张嘴那一帧是 2 倍大的图，等它解码完再切，避免第一下露白 */
+  var pre = new Image(); pre.src = sk.mimg;
+  if(sk.expr) for(var ek in sk.expr){ var pi = new Image(); pi.src = sk.expr[ek]; }
+  pulse.style.left = (sk.m.x*100).toFixed(2) + '%';
+  pulse.style.top  = (sk.m.y*100).toFixed(2) + '%';
+  pulse.classList.remove('hot');
+  scene.className = '';
+  sceneOn = true;
+  stage.classList.add('sceneon');
+  layoutScene();
+}
+
+/* 点击反应换表情：脸那一小块换一张图，淡入 → 保持 → 淡出 */
+function sceneExpr(kind, ms){
+  if(SK.kind !== 'img' || !SK.expr || !SK.expr[kind]) return;
+  exprPatch.style.backgroundImage = 'url(' + SK.expr[kind] + ')';
+  exprPatch.classList.add('on');
+  clearTimeout(sceneExpr._t);
+  sceneExpr._t = setTimeout(function(){ exprPatch.classList.remove('on'); }, ms || 1100);
+}
+
+/* 场景反应（写实皮肤没法开合嘴，用整体律动表现） */
+function sceneReact(cls, ms){
+  scene.classList.remove('rb-bounce','rb-shake','rb-sway','rb-pop');
+  void scene.offsetWidth;
+  scene.classList.add(cls);
+  clearTimeout(sceneReact._t);
+  sceneReact._t = setTimeout(function(){ scene.classList.remove(cls); }, ms);
+}
+
+function bind(){
+  E.body = $('bodyGroup'); E.head = $('headGroup'); E.bob = $('headBob');
+  E.tail = $('tailGroup');
+  E.eyeL = $('eyeL'); E.eyeR = $('eyeR');
+  E.pupilL = $('pupilL'); E.pupilR = $('pupilR');
+  E.mouthOpen = $('mouthOpen'); E.mouthClosed = $('mouthClosed');
+  E.blush = $('blush'); E.props = $('props');
+  mouthY = E.mouthOpen ? (parseFloat(E.mouthOpen.getAttribute('data-mouth-y')) || 484) : 484;
+}
+
+var skinbar = $('skinbar');
+ORDER.forEach(function(id){
+  if(id === 'r-pikachu'){
+    var dv = document.createElement('span');
+    dv.className = 'sdiv';
+    skinbar.appendChild(dv);
+  }
+  var b = document.createElement('button');
+  b.className = 'skin';
+  b.setAttribute('data-id', id);
+  b.innerHTML = MINI[id] + '<span>' + SKINS[id].name + '</span>';
+  b.addEventListener('click', function(){
+    if(id === cur) return;
+    loadSkin(id);
+    if(sfxOn){ blip(620, 1180, .14, 'triangle', .13); }
+  });
+  skinbar.appendChild(b);
+});
+
+function loadSkin(id, animate){
+  cur = id; SK = SKINS[id];
+  var fade = (animate !== false);
+  if(fade) petEl.classList.add('gone');
+  setTimeout(function(){
+    if(SK.kind === 'img') buildScene(SK);
+    else buildSvg(id);
+    bind();
+    $('title').textContent = SK.name;
+    [].forEach.call(skinbar.children, function(c){
+      c.classList.toggle('on', c.getAttribute('data-id') === id);
+    });
+    setTimeout(function(){ petEl.classList.remove('gone'); }, fade ? 110 : 0);
+  }, fade ? 190 : 0);
+  busy = false;
+  if(EN.state === 'rec') endRec(true);
+}
+
+/* ============================================================
+   嘴 / 表情
+============================================================ */
+function setMouth(v){
+  if(!E.mouthOpen) return;
+  v = Math.max(0, Math.min(1, v));
+  if(v > 0.04){
+    if(E.mouthOpen.style.display === 'none'){
+      E.mouthOpen.style.display = '';
+      E.mouthClosed.style.display = 'none';
+    }
+    E.mouthOpen.setAttribute('transform',
+      'translate(500,' + mouthY + ') scale(1,' + (0.18 + v*0.95).toFixed(3) + ') translate(-500,' + (-mouthY) + ')');
+  }else{
+    if(E.mouthOpen.style.display !== 'none'){
+      E.mouthOpen.style.display = 'none';
+      E.mouthClosed.style.display = '';
+    }
+  }
+}
+
+function blink(){
+  if(!E.eyeL) return;
+  var s = 'scale(1,0.07)';
+  E.eyeL.style.transform = s; E.eyeR.style.transform = s;
+  setTimeout(function(){
+    if(!E.eyeL) return;
+    E.eyeL.style.transform = ''; E.eyeR.style.transform = '';
+  }, 105);
+}
+setInterval(function(){ if(!busy && Math.random() < 0.72) blink(); }, 2900);
+
+$('stage').addEventListener('pointermove', function(e){
+  if(!E.pupilL) return;
+  var r = petEl.getBoundingClientRect();
+  if(!r.width) return;
+  var dx = Math.max(-14, Math.min(14, ((e.clientX - r.left)/r.width - .5) * 34));
+  var dy = Math.max(-12, Math.min(12, ((e.clientY - r.top)/r.height - .5) * 30));
+  E.pupilL.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+  E.pupilR.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+}, {passive:true});
+
+function showBlush(ms){
+  if(!E.blush) return;
+  E.blush.style.transition = 'opacity .3s ease';
+  E.blush.style.opacity = '1';
+  clearTimeout(showBlush._t);
+  showBlush._t = setTimeout(function(){ if(E.blush) E.blush.style.opacity = '0'; }, ms || 1400);
+}
+
+/* ============================================================
+   反应动作
+============================================================ */
+function react(cls, ms, keepBusy){
+  busy = true;
+  var full = 'react-' + cls;
+  petEl.classList.remove('react-pet','react-belly','react-tail','react-eat','react-happy','react-shock');
+  void petEl.offsetWidth;
+  petEl.classList.add(full);
+  clearTimeout(react._t);
+  react._t = setTimeout(function(){
+    petEl.classList.remove(full);
+    if(!keepBusy) busy = false;
+  }, ms);
+}
+
+function squint(on){
+  if(!E.eyeL) return;
+  var s = on ? 'scale(1,0.55)' : '';
+  E.eyeL.style.transform = s; E.eyeR.style.transform = s;
+}
+
+function petHead(){
+  if(busy) return;
+  if(SK.kind === 'img'){
+    busy = true;
+    sceneExpr('happy', 1200);
+    sceneReact('rb-pop', 620);
+    setTimeout(function(){ sceneReact('rb-bounce', 1300); }, 240);
+    setTimeout(function(){ purr(1.5); }, 90);
+    setTimeout(function(){ busy = false; }, 1500);
+    return;
+  }
+  react('pet', 1100);
+  showBlush(1300);
+  setTimeout(function(){ purr(1.5); }, 90);
+  setTimeout(function(){ squint(true); }, 160);
+  setTimeout(function(){ squint(false); }, 900);
+}
+
+function pokeBelly(){
+  if(busy) return;
+  if(SK.kind === 'img'){
+    busy = true;
+    sceneExpr('shock', 1000);
+    sceneReact('rb-bounce', 1400);
+    [0,140,280].forEach(function(d,i){
+      setTimeout(function(){ blip(520 + i*90, 880 + i*110, .11, 'triangle', .14); }, d);
+    });
+    setTimeout(function(){ cry(1.25, .55, .75); }, 400);
+    setTimeout(function(){ busy = false; }, 1500);
+    return;
+  }
+  react('belly', 820);
+  [0,140,280].forEach(function(d,i){
+    setTimeout(function(){ blip(520 + i*90, 880 + i*110, .11, 'triangle', .14); }, d);
+  });
+  setTimeout(function(){ cry(1.25, .55, .75); }, 400);
+}
+
+function grabTail(){
+  if(busy) return;
+  if(SK.kind === 'img'){
+    busy = true;
+    sceneExpr('angry', 1300);
+    sceneReact('rb-shake', 1400);
+    setTimeout(function(){
+      blip(1200, 380, .22, 'sawtooth', .15);
+      noiseBurst(.30, 3600, 2.2, .12, 1400);
+    }, 70);
+    setTimeout(function(){ cry(1.35, .72, .86); }, 330);
+    setTimeout(function(){ busy = false; }, 1600);
+    return;
+  }
+  react('tail', 880);
+  setTimeout(function(){
+    blip(1200, 380, .22, 'sawtooth', .15);
+    noiseBurst(.30, 3600, 2.2, .12, 1400);
+  }, 70);
+  setTimeout(function(){ cry(1.35, .72, .86); }, 330);
+}
+
+function eatSound(){
+  for(var i=0;i<4;i++){
+    (function(i){
+      setTimeout(function(){ blip(300 - i*22, 150, .13, 'sine', .16); }, i*190);
+    })(i);
+  }
+}
+
+/* 写实皮肤：角色在整张图里的位置各家不同，用标定好的热区判定 */
+stage.addEventListener('pointerdown', function(e){
+  if(SK.kind !== 'img') return;
+  if(e.target.closest && e.target.closest('#topbar')) return;
+  var r = scene.getBoundingClientRect();
+  if(!r.width) return;
+  var nx = (e.clientX - r.left)/r.width;
+  var ny = (e.clientY - r.top)/r.height;
+  if(nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
+  if(ensureAudio() === null) return;
+  var best = null, bd = 9e9;
+  (SK.spots || []).forEach(function(sp){
+    var d = Math.sqrt((nx-sp.x)*(nx-sp.x) + (ny-sp.y)*(ny-sp.y));
+    if(d < sp.r && d < bd){ bd = d; best = sp.k; }
+  });
+  if(!best) return;
+  if(best === 'tail') grabTail();
+  else if(best === 'belly') pokeBelly();
+  else petHead();
+});
+
+petEl.addEventListener('pointerdown', function(e){
+  if(!E.head) return;
+  var r = petEl.getBoundingClientRect();
+  if(!r.width) return;
+  var px = (e.clientX - r.left)/r.width;
+  var py = (e.clientY - r.top)/r.height;
+  if(ensureAudio() === null) return;
+  if(px > 0.78 && py > 0.44) grabTail();
+  else if(py > 0.58) pokeBelly();
+  else petHead();
+});
+
+/* ============================================================
+   道具
+============================================================ */
+function clearProps(){ if(E.props) E.props.innerHTML = ''; }
+function M(){ return SK.mouth; }
+
+function animProp(node, from, to, dur, onDone){
+  var t0 = performance.now();
+  function step(now){
+    var p = Math.min(1, (now - t0)/dur);
+    var e = p<0.5 ? 2*p*p : -1+(4-2*p)*p;
+    node.setAttribute('transform','translate(' +
+      (from.x + (to.x-from.x)*e).toFixed(1) + ',' + (from.y + (to.y-from.y)*e).toFixed(1) + ')');
+    if(p < 1) requestAnimationFrame(step);
+    else if(onDone) onDone();
+  }
+  requestAnimationFrame(step);
+}
+
+function giveMilk(){
+  if(SK.kind === 'img'){ sceneProp('milk'); return; }
+  if(busy) return;
+  busy = true;
+  clearProps();
+  var m = M();
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('opacity','0');
+  g.innerHTML =
+    '<g transform="translate(-34,-46)">'+
+      '<path d="M 12 8 H 56 L 50 22 V 34 L 64 56 V 104 A 8 8 0 0 1 56 112 H 12 A 8 8 0 0 1 4 104 V 56 L 18 34 V 22 Z" fill="#FFFFFF" opacity=".92" stroke="#9FB0C0" stroke-width="3"/>'+
+      '<path d="M 4 56 H 64 V 104 A 8 8 0 0 1 56 112 H 12 A 8 8 0 0 1 4 104 Z" fill="#F3F8FC"/>'+
+      '<path d="M 4 62 H 64 V 104 A 8 8 0 0 1 56 112 H 12 A 8 8 0 0 1 4 104 Z" fill="#FFFFFF"/>'+
+      '<ellipse cx="34" cy="62" rx="30" ry="6" fill="#F7FBFF"/>'+
+    '</g>';
+  E.props.appendChild(g);
+  g.style.transition = 'opacity .22s ease';
+  requestAnimationFrame(function(){ g.style.opacity = '1'; });
+
+  animProp(g, {x:760, y:m.y+36}, {x:640, y:m.y-14}, 460, function(){
+    setTimeout(function(){
+      animProp(g, {x:640, y:m.y-14}, {x:m.x+22, y:m.y-32}, 380, function(){
+        eatSound();
+        petEl.classList.add('react-eat');
+        setTimeout(function(){ petEl.classList.remove('react-eat'); }, 760);
+        g.style.transition = 'transform .4s ease';
+        g.setAttribute('transform', g.getAttribute('transform') + ' rotate(52)');
+        setTimeout(function(){
+          g.style.transition = 'opacity .4s ease';
+          g.style.opacity = '0';
+          setTimeout(clearProps, 400);
+        }, 620);
+      });
+    }, 120);
+  });
+
+  setTimeout(function(){
+    react('happy', 1250);
+    setTimeout(function(){ cry(1.1, .95, .9); }, 260);
+  }, 1620);
+}
+
+function giveChili(){
+  if(SK.kind === 'img'){ sceneProp('chili'); return; }
+  if(busy) return;
+  busy = true;
+  clearProps();
+  var m = M();
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('opacity','0');
+  g.innerHTML =
+    '<g transform="translate(-46,-24) scale(1.5)">'+
+      '<path d="M 40 12 C 56 14 66 28 66 44 C 66 68 46 88 22 88 C 8 88 -2 80 -8 68 C -11 62 -7 56 -1 57 C 12 60 22 54 28 42 C 32 34 34 22 34 12 Z" fill="#E8453C" stroke="#BE2C25" stroke-width="3"/>'+
+      '<path d="M 40 6 C 46 -2 56 -4 62 2 C 66 6 64 12 58 12 C 52 12 46 12 40 12 Z" fill="#5FA83C"/>'+
+      '<path d="M 44 6 L 48 2" stroke="#4B8C30" stroke-width="4" stroke-linecap="round"/>'+
+    '</g>';
+  E.props.appendChild(g);
+  g.style.transition = 'opacity .2s ease';
+  requestAnimationFrame(function(){ g.style.opacity = '1'; });
+
+  animProp(g, {x:250, y:m.y+56}, {x:m.x-30, y:m.y-28}, 470, function(){
+    setTimeout(function(){
+      eatSound();
+      petEl.classList.add('react-eat');
+      setTimeout(function(){ petEl.classList.remove('react-eat'); }, 700);
+      g.style.transition = 'opacity .25s ease';
+      g.style.opacity = '0';
+      setTimeout(clearProps, 260);
+      setTimeout(spicyReaction, 760);
+    }, 100);
+  });
+}
+
+function spicyReaction(){
+  react('shock', 620, true);
+  if(E.eyeL){
+    E.eyeL.style.transition = 'transform .12s ease';
+    E.eyeR.style.transition = 'transform .12s ease';
+    E.eyeL.style.transform = 'scale(1.14)';
+    E.eyeR.style.transform = 'scale(1.14)';
+    setTimeout(function(){
+      if(!E.eyeL) return;
+      E.eyeL.style.transform = ''; E.eyeR.style.transform = '';
+    }, 820);
+  }
+
+  var t0 = performance.now();
+  (function pant(){
+    var p = (performance.now()-t0)/1000;
+    if(p > 1.5){ setMouth(0); return; }
+    setMouth(0.45 + Math.abs(Math.sin(p*11))*0.55);
+    requestAnimationFrame(pant);
+  })();
+
+  clearProps();
+  var m = M();
+  var smoke = document.createElementNS('http://www.w3.org/2000/svg','g');
+  for(var i=0;i<5;i++){
+    (function(i){
+      var c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      var r = 16 + i*7;
+      c.setAttribute('cx', m.x + (i%2?18:-14));
+      c.setAttribute('cy', m.y + 26);
+      c.setAttribute('r', r);
+      c.setAttribute('fill', '#C9D4DE');
+      c.setAttribute('opacity', '0.75');
+      smoke.appendChild(c);
+      setTimeout(function(){
+        var t1 = performance.now(), dur = 1350;
+        (function up(now){
+          var p = Math.min(1,(now-t1)/dur);
+          c.setAttribute('cy', m.y + 26 - p*250);
+          c.setAttribute('cx', m.x + (i%2?1:-1)*(18 + p*70));
+          c.setAttribute('r', r*(0.6 + p*1.5));
+          c.setAttribute('opacity', String(0.75*(1-p)));
+          if(p<1) requestAnimationFrame(up);
+          else if(c.parentNode) c.parentNode.removeChild(c);
+        })(performance.now());
+      }, i*130);
+    })(i);
+  }
+  if(E.props) E.props.appendChild(smoke);
+
+  setTimeout(function(){
+    noiseBurst(.22, 900, 1.4, .2, 300);
+    setTimeout(function(){ noiseBurst(.26, 800, 1.4, .18, 260); }, 300);
+  }, 420);
+
+  setTimeout(function(){ busy = false; }, 1900);
+}
+
+function giveFeather(){
+  if(SK.kind === 'img'){ sceneProp('feather'); return; }
+  if(busy) return;
+  busy = true;
+  clearProps();
+  var m = M();
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.innerHTML =
+    '<g transform="translate(-30,-70) scale(1.25)">'+
+      '<path d="M 46 6 C 12 8 -12 34 -20 64 C -25 82 -22 100 -14 112 L 6 100 L 12 74 C -2 82 44 34 46 6 Z" fill="#FFE8AE" stroke="#D6AE55" stroke-width="2.5" stroke-linejoin="round"/>'+
+      '<path d="M 46 6 C 24 46 0 84 -14 112" fill="none" stroke="#D6AE55" stroke-width="2" opacity=".8"/>'+
+      '<path d="M 40 22 L 12 34 M 28 44 L 0 58 M 18 66 L -8 82" stroke="#E0C070" stroke-width="1.6" opacity=".7"/>'+
+    '</g>';
+  E.props.appendChild(g);
+
+  var path = [
+    {x:180, y:m.y-54, d:340}, {x:760, y:m.y-84, d:420}, {x:820, y:m.y+116, d:400},
+    {x:420, y:m.y-234, d:430}, {x:640, y:m.y+36, d:340}
+  ];
+  var i = 0, curP = {x:-70, y:m.y-54};
+
+  function sneeze(){
+    react('shock', 520);
+    blink();
+    setMouth(0.9);
+    setTimeout(function(){ setMouth(0); }, 260);
+    blip(300, 1400, .16, 'sine', .12);
+    setTimeout(function(){ noiseBurst(.36, 4200, 1.1, .26, 700); }, 130);
+    if(E.head){ E.head.style.transform = 'rotate(0deg)'; }
+  }
+
+  function next(){
+    if(i >= path.length){ clearProps(); busy = false; return; }
+    var p = path[i++];
+    g.style.opacity = '1';
+    animProp(g, curP, p, p.d, null);
+    curP = {x:p.x, y:p.y};
+
+    if(E.pupilL){
+      var dx = Math.max(-14, Math.min(14, (p.x-500)/1000*30));
+      var dy = Math.max(-12, Math.min(12, (p.y-m.y)/1080*26));
+      E.pupilL.style.transform = 'translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)';
+      E.pupilR.style.transform = 'translate('+dx.toFixed(1)+'px,'+dy.toFixed(1)+'px)';
+      E.head.style.transition = 'transform .3s ease';
+      E.head.style.transform = 'rotate(' + (dx*0.28).toFixed(2) + 'deg)';
+    }
+    setTimeout(function(){
+      if(i === 3) sneeze();
+      next();
+    }, p.d);
+  }
+
+  next();
+  setTimeout(function(){
+    if(!E.head) return;
+    E.head.style.transition = 'transform .4s ease';
+    E.head.style.transform = '';
+    E.pupilL.style.transform = ''; E.pupilR.style.transform = '';
+  }, 2600);
+}
+
+/* 写实皮肤下的道具反应：没有 SVG 道具层，就用整体律动 + 声波颜色 + 音效来表现 */
+function sceneProp(kind){
+  if(busy) return;
+  busy = true;
+  var t = 0;
+
+  if(kind === 'milk'){
+    eatSound();
+    sceneExpr('happy', 1600);
+    setTimeout(function(){ sceneReact('rb-bounce', 1500); }, 380);
+    setTimeout(function(){ cry(1.1, .95, .9); }, 620);
+    t = 2100;
+
+  }else if(kind === 'chili'){
+    setTimeout(function(){
+      sceneExpr('angry', 1900);
+      sceneReact('rb-shake', 1900);
+      pulse.classList.add('hot');
+      if(E.eyeL){ E.eyeL.style.transform = 'scale(1.14)'; }
+      noiseBurst(.22, 900, 1.4, .2, 300);
+      setTimeout(function(){ noiseBurst(.26, 800, 1.4, .18, 260); }, 300);
+      /* 假装在喘：直接手动驱动声波强度 */
+      var t0 = performance.now();
+      (function pant(){
+        var p = (performance.now() - t0) / 1000;
+        if(p > 1.8){ sceneIn.style.setProperty('--lv','0'); return; }
+        pulse.classList.add('on');
+        sceneIn.style.setProperty('--lv', (0.42 + Math.abs(Math.sin(p*11))*0.58).toFixed(3));
+        requestAnimationFrame(pant);
+      })();
+      setTimeout(function(){ pulse.classList.remove('hot'); if(!busy) pulse.classList.remove('on'); }, 2100);
+    }, 260);
+    t = 2400;
+
+  }else{
+    setTimeout(function(){ sceneExpr('happy', 1800); sceneReact('rb-sway', 1900); }, 120);
+    setTimeout(function(){
+      blink();
+      sceneReact('rb-pop', 560);
+      blip(300, 1400, .16, 'sine', .12);
+      setTimeout(function(){ noiseBurst(.36, 4200, 1.1, .26, 700); }, 130);
+    }, 1500);
+    t = 2900;
+  }
+
+  setTimeout(function(){ busy = false; }, t);
+}
+
+/* ============================================================
+   变声播放（按角色参数装配效果链）
+============================================================ */
+function setSpeaking(on){
+  if(on){
+    petEl.classList.add('speaking');
+    pulse.classList.add('on');
+  }else{
+    petEl.classList.remove('speaking');
+    setMouth(0);
+    pulse.classList.remove('on');
+    sceneIn.style.setProperty('--lv', '0');
+  }
+}
+
+function speakBuffer(buffer){
+  ensureAudio();
+  if(!ac || !buffer) return Promise.resolve();
+  var v = SK.voice;
+
+  return new Promise(function(resolve){
+    var src = ac.createBufferSource();
+    src.buffer = buffer;
+    src.playbackRate.value = v.rate;
+
+    var node = src;
+    var auto = [];
+
+    function chain(n){
+      try{ node.connect(n); }catch(e){}
+      node = n; return n;
+    }
+
+    if(v.hp){
+      var hp = ac.createBiquadFilter();
+      hp.type='highpass'; hp.frequency.value = v.hp; hp.Q.value = .7;
+      chain(hp);
+    }
+    if(v.lp){
+      var lpf = ac.createBiquadFilter();
+      lpf.type='lowpass'; lpf.frequency.value = v.lp; lpf.Q.value = v.lpQ || .9;
+      chain(lpf);
+    }
+    (v.peaks||[]).forEach(function(p){
+      var f = ac.createBiquadFilter();
+      f.type='peaking'; f.frequency.value = p[0]; f.Q.value = p[1]; f.gain.value = p[2];
+      chain(f);
+    });
+
+    if(v.drive > 0){
+      var sh = ac.createWaveShaper();
+      var n = 1024, curve = new Float32Array(n);
+      for(var i=0;i<n;i++){
+        var x = i*2/n - 1;
+        curve[i] = Math.tanh(x*v.drive) * .92;
+      }
+      sh.curve = curve;
+      chain(sh);
+    }
+
+    // 电味环形调制
+    if(v.ring){
+      var dry = ac.createGain(); dry.gain.value = 1 - v.ringMix;
+      var rm = ac.createGain(); rm.gain.value = 0;
+      var ro = ac.createOscillator(); ro.type='sine'; ro.frequency.value = v.ring;
+      ro.connect(rm.gain);
+      var wetRm = ac.createGain(); wetRm.gain.value = v.ringMix;
+      var merge = ac.createGain();
+      node.connect(dry); node.connect(rm); rm.connect(wetRm);
+      dry.connect(merge); wetRm.connect(merge);
+      ro.start(); auto.push(ro);
+      node = merge;
+    }
+
+    // 幽灵合唱
+    if(v.chorus){
+      var dly = ac.createDelay(0.06); dly.delayTime.value = v.chorus[0];
+      var dlfo = ac.createOscillator(); dlfo.frequency.value = v.chorus[1];
+      var dg = ac.createGain(); dg.gain.value = v.chorus[2];
+      dlfo.connect(dg); dg.connect(dly.delayTime); dlfo.start(); auto.push(dlfo);
+      var dmix = ac.createGain(); dmix.gain.value = v.chorus[3];
+      var merge2 = ac.createGain();
+      node.connect(merge2); node.connect(dly); dly.connect(dmix); dmix.connect(merge2);
+      node = merge2;
+    }
+
+    var g = ac.createGain(); g.gain.value = v.gain; chain(g);
+
+    if(v.vib){
+      var lfo = ac.createOscillator(); lfo.type='sine'; lfo.frequency.value = v.vib;
+      var lg = ac.createGain(); lg.gain.value = v.vibAmt;
+      lfo.connect(lg); lg.connect(src.playbackRate); lfo.start(); auto.push(lfo);
+    }
+
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 512;
+    g.connect(analyser); analyser.connect(ac.destination);
+
+    var conv = ac.createConvolver(); conv.buffer = getIR(v.ir[0], v.ir[1]);
+    var wet = ac.createGain(); wet.gain.value = v.wet;
+    g.connect(conv); conv.connect(wet); wet.connect(ac.destination);
+
+    setSpeaking(true);
+    src.start(0);
+
+    var tds = new Uint8Array(analyser.frequencyBinCount);
+    cancelAnimationFrame(speakRaf);
+    (function loop(){
+      analyser.getByteTimeDomainData(tds);
+      var pk = 0;
+      for(var k=0;k<tds.length;k++){
+        var val = Math.abs(tds[k]-128);
+        if(val > pk) pk = val;
+      }
+      var lv = Math.min(1, pk/56);
+      setMouth(lv);
+      if(sceneOn) sceneIn.style.setProperty('--lv', lv.toFixed(3));
+      speakRaf = requestAnimationFrame(loop);
+    })();
+
+    var done = false;
+    function finish(){
+      if(done) return; done = true;
+      cancelAnimationFrame(speakRaf);
+      setSpeaking(false);
+      if(E.pupilL){ E.pupilL.style.transform = ''; E.pupilR.style.transform = ''; }
+      auto.forEach(function(o){ try{ o.stop(); }catch(e){} });
+      resolve();
+    }
+    src.onended = finish;
+    setTimeout(function(){
+      if(petEl.classList.contains('speaking')) finish();
+    }, (buffer.duration / v.rate) * 1000 + 600);
+  });
+}
+
+/* ============================================================
+   采集引擎：常听 / 手动，共用一套 VAD
+============================================================ */
+var EN = {
+  mode:'off',           // off | manual | always
+  state:'idle',         // idle | rec | play | cool
+  stream:null, srcNode:null, proc:null, sink:null,
+  chunks:[], len:0,
+  above:0, below:0,
+  recAt:0,
+  floor:0.012,
+  TH_ON:0.030, TH_OFF:0.018,
+  boostUntil:0,
+  calFrames:0, calSum:0
+};
+var SAMPLE_RATE = 0;
+
+function closeMic(){
+  if(EN.proc){ try{ EN.proc.disconnect(); }catch(e){} EN.proc.onaudioprocess = null; EN.proc = null; }
+  if(EN.srcNode){ try{ EN.srcNode.disconnect(); }catch(e){} EN.srcNode = null; }
+  if(EN.sink){ try{ EN.sink.disconnect(); }catch(e){} EN.sink = null; }
+  if(EN.stream){
+    EN.stream.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} });
+    EN.stream = null;
+  }
+}
+
+function openMic(){
+  if(EN.stream) return Promise.resolve();
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    return Promise.reject(new Error('NoGetUserMedia'));
+  }
+  var always = (EN.mode === 'always');
+  return navigator.mediaDevices.getUserMedia({
+    audio:{
+      echoCancellation: always,
+      noiseSuppression: always,
+      autoGainControl: false,
+      channelCount: 1
+    }
+  }).then(function(s){
+    EN.stream = s;
+    ensureAudio();
+    if(!ac) throw new Error('NoAudioContext');
+    SAMPLE_RATE = ac.sampleRate;
+    EN.srcNode = ac.createMediaStreamSource(s);
+    var bufSize = 2048;
+    EN.proc = ac.createScriptProcessor(bufSize, 1, 1);
+    EN.sink = ac.createGain(); EN.sink.gain.value = 0;
+    EN.srcNode.connect(EN.proc);
+    EN.proc.connect(EN.sink);
+    EN.sink.connect(ac.destination);
+    EN.proc.onaudioprocess = function(e){
+      var inp = e.inputBuffer.getChannelData(0);
+      var sum = 0;
+      for(var i=0;i<inp.length;i++) sum += inp[i]*inp[i];
+      frame(Math.sqrt(sum/inp.length), inp);
+    };
+    EN.chunks = []; EN.len = 0; EN.floor = 0.012; EN.calFrames = 0; EN.calSum = 0;
+    EN.state = 'idle'; EN.above = 0; EN.below = 0;
+  });
+}
+
+var meterEl = $('meter');
+var meterMark = 0;
+
+function frame(rms, data){
+  if(meterEl){
+    var now = performance.now();
+    if(now - meterMark > 55){
+      meterMark = now;
+      meterEl.style.width = Math.min(100, rms*460).toFixed(1) + '%';
+    }
+  }
+
+  // 前 ~0.7 秒做环境噪声校准
+  if(EN.calFrames < 18){
+    EN.calFrames++;
+    EN.calSum += rms;
+    if(EN.calFrames === 18){
+      EN.floor = Math.max(0.004, EN.calSum/18);
+      EN.TH_ON  = Math.max(0.020, EN.floor*3.4);
+      EN.TH_OFF = EN.TH_ON * 0.58;
+    }
+    return;
+  }
+
+  var boosted = performance.now() < EN.boostUntil;
+  var k = boosted ? 1.9 : 1;
+  var on  = EN.TH_ON  * k;
+  var off = EN.TH_OFF * k;
+
+  if(EN.state === 'idle'){
+    if(EN.mode === 'always'){
+      if(rms > on){
+        EN.above++;
+        if(EN.above >= 2) { EN.above = 0; beginRec(); }
+      } else EN.above = 0;
+    }
+    return;
+  }
+
+  if(EN.state === 'rec'){
+    if(EN.len < SAMPLE_RATE*22){
+      EN.chunks.push(new Float32Array(data));
+      EN.len += data.length;
+    }
+    if(rms > off) EN.below = 0;
+    else EN.below++;
+
+    var durMs = performance.now() - EN.recAt;
+    var minMs = (EN.mode === 'manual') ? 1000 : 260;
+    var quietNeeded = 12;
+    if(durMs > minMs && EN.below >= quietNeeded) endRec();
+    else if(durMs > (EN.mode === 'manual' ? 20000 : 12000)) endRec();
+  }
+}
+
+function beginRec(){
+  if(EN.state !== 'idle') return;
+  EN.state = 'rec';
+  EN.chunks = []; EN.len = 0; EN.below = 0; EN.recAt = performance.now();
+  $('micBtn').classList.add('rec');
+  if(EN.mode === 'manual'){ setHint('正在听…说完自动停'); }
+}
+
+function endRec(silent){
+  if(EN.state !== 'rec') return;
+  EN.state = 'cool';
+  $('micBtn').classList.remove('rec');
+  setHint('');
+
+  var n = EN.len;
+  var chunks = EN.chunks;
+  EN.chunks = []; EN.len = 0;
+
+  if(silent){ EN.state = 'idle'; return; }
+  if(n < SAMPLE_RATE*0.20 || !ac){ EN.state = 'idle'; return; }
+
+  var buf = ac.createBuffer(1, n, SAMPLE_RATE);
+  var ch = buf.getChannelData(0);
+  var off = 0;
+  for(var i=0;i<chunks.length;i++){ ch.set(chunks[i], off); off += chunks[i].length; }
+
+  var f = Math.min(Math.floor(SAMPLE_RATE*0.012), Math.floor(n/4));
+  for(var j=0;j<f;j++){
+    var k = j/f;
+    ch[j] *= k;
+    ch[n-1-j] *= k;
+  }
+
+  EN.state = 'play';
+  speakBuffer(buf).then(function(){
+    EN.state = 'cool';
+    EN.boostUntil = performance.now() + 1700;
+    setTimeout(function(){
+      if(EN.state === 'cool') EN.state = 'idle';
+      EN.above = 0; EN.below = 0;
+    }, 700);
+  });
+}
+
+var hintEl = $('hint'), hintT = 0;
+function setHint(txt){
+  if(!txt){ hintEl.classList.remove('show'); return; }
+  hintEl.textContent = txt;
+  hintEl.classList.add('show');
+  clearTimeout(hintT);
+  hintT = setTimeout(function(){ hintEl.classList.remove('show'); }, 2600);
+}
+
+/* ---- 模式切换 ---- */
+var alwaysBtn = $('alwaysBtn');
+var micBtn = $('micBtn');
+
+function enterAlways(){
+  EN.mode = 'always';
+  closeMic();
+  EN.mode = 'always';
+  return openMic().then(function(){
+    alwaysBtn.classList.add('on');
+    micBtn.classList.add('live');
+    setHint('已开常听：直接说话，' + SK.name + '会跟着学');
+    toast('<b>常听模式已开</b><br>说一句，' + SK.name + '就跟着说一句。<br>耳机效果最好（避免它听见自己）。');
+  });
+}
+function exitAll(){
+  closeMic();
+  EN.mode = 'off'; EN.state = 'idle';
+  alwaysBtn.classList.remove('on');
+  micBtn.classList.remove('live','rec');
+  setHint('');
+}
+function toggleAlways(){
+  if(EN.mode === 'always') exitAll();
+  else enterAlways().catch(micErr);
+}
+alwaysBtn.addEventListener('click', function(){ ensureAudio(); toggleAlways(); });
+
+function micErr(err){
+  var m = (err && (err.name || err.message)) || '';
+  if(m === 'NotAllowedError' || m === 'SecurityError'){
+    toast('麦克风被拒绝了。<br>去「设置 → 应用 → 说话宠物 → 权限」里打开< b>麦克风</b>，然后重开一次。'.replace('< b>','<b>'));
+  }else if(m === 'NotFoundError'){
+    toast('没找到麦克风设备');
+  }else if(m === 'NoGetUserMedia' || m === 'NoAudioContext'){
+    toast('这个环境不支持录音');
+  }else{
+    toast('打不开麦克风：' + m);
+  }
+}
+
+micBtn.addEventListener('click', function(){
+  ensureAudio();
+  if(EN.state === 'rec'){ endRec(); return; }
+  if(EN.state === 'play' || EN.state === 'cool') return;
+  if(EN.mode === 'always'){
+    // 常听下点一下＝手动插一句
+    beginRec();
+    return;
+  }
+  var wasOff = (EN.mode === 'off');
+  EN.mode = 'manual';
+  (wasOff ? closeMic() : Promise.resolve()).then(function(){
+    EN.mode = 'manual';
+    return openMic();
+  }).then(function(){
+    EN.state = 'idle'; EN.above = 0;
+    beginRec();
+  }).catch(micErr);
+});
+
+/* ============================================================
+   UI
+============================================================ */
+$('toolMilk').addEventListener('click', function(){ ensureAudio(); giveMilk(); });
+$('toolChili').addEventListener('click', function(){ ensureAudio(); giveChili(); });
+$('toolFeather').addEventListener('click', function(){ ensureAudio(); giveFeather(); });
+
+var sfxBtn = $('sfxBtn');
+sfxBtn.addEventListener('click', function(){
+  sfxOn = !sfxOn;
+  sfxBtn.classList.toggle('off', !sfxOn);
+  $('wave1').style.display = sfxOn ? '' : 'none';
+  $('wave2').style.display = sfxOn ? '' : 'none';
+  if(sfxOn) blip(700, 1000, .1, 'sine', .12);
+});
+
+var nightBtn = $('nightBtn');
+var nightOn = false;
+try{ nightOn = localStorage.getItem('tp_night') === '1'; }catch(e){}
+function applyNight(){
+  document.body.classList.toggle('night', nightOn);
+  nightBtn.classList.toggle('off', !nightOn);
+  var tc = document.querySelector('meta[name=theme-color]');
+  if(tc) tc.setAttribute('content', nightOn ? '#141C26' : '#C3CFDA');
+}
+nightBtn.addEventListener('click', function(){
+  nightOn = !nightOn;
+  try{ localStorage.setItem('tp_night', nightOn ? '1' : '0'); }catch(e){}
+  applyNight();
+  blip(nightOn?700:1000, nightOn?520:760, .09, 'sine', .1);
+});
+applyNight();
+
+var toastEl = $('toast'), toastTimer = 0;
+function toast(html){
+  toastEl.innerHTML = html;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 4200);
+}
+
+/* 首次加载（支持 #pikachu 这样的锚点直达某个角色） */
+function hashSkin(){
+  var h = (location.hash || '').replace('#','');
+  return SKINS[h] ? h : '';
+}
+loadSkin(hashSkin() || 'tom', false);
+window.addEventListener('hashchange', function(){
+  var h = hashSkin();
+  if(h && h !== cur) loadSkin(h);
+});
+setTimeout(function(){
+  if(EN.mode === 'off'){
+    setHint('点麦克风说一句，或者点右上角开启常听');
+  }
+}, 1100);
+
+/* 首次触摸解锁音频上下文 */
+function unlock(){
+  ensureAudio();
+  if(ac && ac.state === 'running') document.removeEventListener('pointerdown', unlock);
+}
+document.addEventListener('pointerdown', unlock);
+
+window.addEventListener('keydown', function(e){
+  if(e.code === 'Space' && !e.repeat && document.activeElement === document.body){
+    e.preventDefault();
+    micBtn.click();
+  }
+});
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+/* 给安卓壳调用 / 自检用 */
+window.TP = {
+  setAlways: function(on){ ensureAudio(); if(on) enterAlways().catch(micErr); else exitAll(); },
+  isNight: function(){ return nightOn; },
+  skin: function(id){ if(SKINS[id]) loadSkin(id); },
+  micErr: micErr,
+  status: function(){
+    return {
+      skin: cur, mode: EN.mode, state: EN.state, micOpen: !!EN.stream,
+      thOn: +EN.TH_ON.toFixed(4), thOff: +EN.TH_OFF.toFixed(4),
+      floor: +EN.floor.toFixed(4), pcm: EN.len, audio: ac ? ac.state : 'none'
+    };
+  },
+  force: function(){ if(EN.state === 'idle') beginRec(); },
+  stop: function(){ endRec(); }
+};
+window.__TP_READY__ = true;
+
+})();
+</script>
+</body>
+</html>
