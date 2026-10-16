@@ -296,46 +296,28 @@ body.night .skin.on{background:#33465A;box-shadow:0 3px 12px rgba(74,144,217,.35
 .tool.on{background:linear-gradient(180deg,#FFF1F0,#FDDCD9);color:#C8352C}
 body.night .tool.on{background:linear-gradient(180deg,#4A2A28,#3A1F1E);color:#FF8A80}
 
-#micBtn{
-  width:104px;height:104px;border-radius:50%;padding:0;
-  margin-top:-30px;border:none;cursor:pointer;
-  background:radial-gradient(circle at 36% 30%,#6FB2EE,#3D84CE 62%,#2C6BB0);
-  color:#fff;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 18px rgba(45,110,180,.42),inset 0 -4px 0 rgba(0,0,0,.14),inset 0 3px 0 rgba(255,255,255,.28);
-  transition:width .26s ease,height .26s ease,margin-top .26s ease,opacity .26s ease,
-             transform .13s ease,background .2s ease,box-shadow .2s ease;
-  position:relative;flex:0 0 auto;
-}
-#micBtn svg{width:44px;height:44px}
-#micBtn:active{transform:scale(.94)}
-#micBtn.rec{
-  background:radial-gradient(circle at 36% 30%,#F2716A,#DE3B32 62%,#B92A22);
-  box-shadow:0 8px 18px rgba(200,50,40,.45),inset 0 -4px 0 rgba(0,0,0,.16),inset 0 3px 0 rgba(255,255,255,.26);
-}
-#micBtn.rec::before,#micBtn.rec::after{
-  content:"";position:absolute;inset:-4px;border-radius:50%;
-  border:3px solid rgba(222,59,50,.55);animation:ripple 1.5s ease-out infinite;
-}
-#micBtn.rec::after{animation-delay:.75s}
-@keyframes ripple{0%{transform:scale(1);opacity:.85}100%{transform:scale(1.62);opacity:0}}
-/* 常听模式下，中间这颗话筒不再是主按钮——说话自动触发，只在「手动插一句」时才用得上。
-   所以把它收成一颗低调的小圆点，不再抢视觉；常听在跑的信号由右上角那颗绿点表示。 */
-#micBtn.live:not(.rec){
-  width:58px;height:58px;margin-top:0;opacity:.6;
-  background:rgba(255,255,255,.5);color:#5C7A98;
-  box-shadow:0 2px 9px rgba(48,66,86,.15),inset 0 0 0 1px rgba(255,255,255,.55);
-}
-#micBtn.live:not(.rec) svg{width:23px;height:23px}
-#micBtn.live:not(.rec):active{opacity:1;transform:scale(.92)}
-body.night #micBtn.live:not(.rec){
-  background:rgba(255,255,255,.11);color:#9CB4CB;
-  box-shadow:0 2px 9px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.10);
-}
-#micBtn.live:not(.rec)::after{
-  content:"";position:absolute;top:2px;right:2px;inset:auto;
-  width:9px;height:9px;border-radius:50%;border:none;
+/* 话筒按钮：工具栏里普通的一格，放在最右边（不再是中间那颗大圆按钮）。
+   常听开着时按钮不变形，只在右上角点一颗绿点表示「麦克风一直开着」。 */
+#micBtn{position:relative;flex:0 0 auto}
+#micBtn.live{color:#0F8A4C}
+body.night #micBtn.live{color:#4FD98A}
+#micBtn.live::after{
+  content:"";position:absolute;top:6px;right:8px;
+  width:9px;height:9px;border-radius:50%;
   background:#3ED07A;animation:pulse 1.7s ease-out infinite;
 }
+#micBtn.rec{
+  background:linear-gradient(180deg,#FFF1F0,#FDDCD9);color:#C8352C;
+  box-shadow:0 3px 9px rgba(200,50,40,.24),inset 0 -2px 0 rgba(200,50,40,.10);
+}
+body.night #micBtn.rec{background:linear-gradient(180deg,#4A2A28,#3A1F1E);color:#FF8A80}
+#micBtn.rec::before,#micBtn.rec::after{
+  content:"";position:absolute;inset:0;border-radius:20px;background:none;
+  border:2px solid rgba(222,59,50,.6);animation:ripple 1.5s ease-out infinite;
+  pointer-events:none;
+}
+#micBtn.rec::after{animation-delay:.75s}
+@keyframes ripple{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.3);opacity:0}}
 
 /* ---------- 顶部 ---------- */
 #topbar{
@@ -399,8 +381,6 @@ body.night #alwaysBtn.on{background:linear-gradient(180deg,#1E3E55,#16334A);colo
 @media (max-width:520px){
   .tool{width:66px;font-size:11px;border-radius:17px}
   .tool svg{width:23px;height:23px}
-  #micBtn{width:88px;height:88px;margin-top:-26px}
-  #micBtn svg{width:38px;height:38px}
   #toolbar{gap:10px}
   #title{font-size:13.5px}
   .iconbtn{width:38px;height:38px;border-radius:13px}
@@ -410,8 +390,6 @@ body.night #alwaysBtn.on{background:linear-gradient(180deg,#1E3E55,#16334A);colo
 }
 @media (max-height:560px){
   #pet{height:82%}
-  #micBtn{width:76px;height:76px;margin-top:-22px}
-  #micBtn svg{width:33px;height:33px}
   .tool{padding:6px 4px 5px}
   .tool svg{width:21px;height:21px}
   .skinbar{padding-top:6px}
@@ -473,13 +451,6 @@ body.night #alwaysBtn.on{background:linear-gradient(180deg,#1E3E55,#16334A);colo
         牛奶
       </button>
 
-      <button id="micBtn" title="点一下开始，说完自动停">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" stroke="none"/>
-          <path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/><path d="M8.5 22h7"/>
-        </svg>
-      </button>
-
       <button class="tool" id="toolChili">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15.8 3.4c.7-.9 1.9-1.3 2.9-.9"/>
@@ -495,6 +466,14 @@ body.night #alwaysBtn.on{background:linear-gradient(180deg,#1E3E55,#16334A);colo
           <path d="M4.4 20.6 8.6 16"/>
         </svg>
         羽毛
+      </button>
+
+      <button class="tool" id="micBtn" title="点一下说一句；开着常听时会一直听">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" stroke="none"/>
+          <path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/><path d="M8.5 22h7"/>
+        </svg>
+        说话
       </button>
     </div>
   </div>
